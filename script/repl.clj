@@ -25,6 +25,9 @@
 (def renderer-output-dir
   (get-resources "public" asset-path))
 
+(def main
+  (= argument "main"))
+
 (def build
   {:id           id
    :source-paths [(get-path "src" argument)]
@@ -32,9 +35,9 @@
                          :preloads             ['devtools.preload]
                          :source-map-timestamp true
                          :external-config      {:devtools/config {:features-to-install :all}}}
-                        (case argument
-                          "main" {:output-to (get-resources entry)
-                                  :target    :nodejs}
+                        (if main
+                          {:output-to (get-resources entry)
+                           :target    :nodejs}
                           {:output-to  (get-path (fs/parent renderer-output-dir)
                                                  entry)
                            :output-dir renderer-output-dir
@@ -43,8 +46,8 @@
 
 (repl-api/start-figwheel! {:all-builds       [build]
                            :build-ids        [id]
-                           :figwheel-options (case argument
-                                               "main" {}
+                           :figwheel-options (if main
+                                               {}
                                                {:server-port 3450})})
 
 (repl-api/cljs-repl)
