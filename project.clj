@@ -3,4 +3,5 @@
                  [org.clojure/clojurescript "1.10.439"]]
   :plugins [[lein-ancient "0.6.15"]]
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
-                                  [figwheel-sidecar "0.5.18"]]}})
+                                  [figwheel-sidecar "0.5.18"]]}}
+  :source-paths ["src/main"])
