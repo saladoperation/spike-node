@@ -120,4 +120,5 @@ typings/
 
 ### spike-node
 figwheel_server.log
-dev-resources/public/js
+dev-resources/public/main.js
+dev-resources/public/out

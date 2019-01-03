@@ -1,6 +1,5 @@
 (ns repl
-  (:require [clojure.string :as str]
-            [figwheel-sidecar.repl-api :as repl-api]))
+  (:require [figwheel-sidecar.repl-api :as repl-api]))
 
 (def argument
   (first *command-line-args*))
@@ -11,11 +10,13 @@
 (def build
   {:id           "app"
    :source-paths [(str "src/" argument)]
-   :compiler     {:output-to            (str "dev-resources/public/js/"
-                                             argument
-                                             ".js")
+   :compiler     {:output-to            (str "dev-resources/public/"
+                                             (case argument
+                                                   "main" ""
+                                                   "js")
+                                             "main.js")
                   :main                 "spike-node.core"
-                  :asset-path           (str/join "/" ["/js" argument "out"])
+                  :asset-path           "/js/out"
                   :source-map-timestamp true
                   :preloads             ['devtools.preload]
                   :external-config      {:devtools/config {:features-to-install :all}}}
