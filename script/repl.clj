@@ -19,8 +19,11 @@
   (comp (partial str/join "/")
         vector))
 
+(def get-resources
+  (partial get-path "resources"))
+
 (def renderer-output-dir
-  (get-path "resources/public" asset-path))
+  (get-resources "public" asset-path))
 
 (def build
   {:id           id
@@ -30,7 +33,7 @@
                          :source-map-timestamp true
                          :external-config      {:devtools/config {:features-to-install :all}}}
                         (case argument
-                          "main" {:output-to (get-path "resources" entry)
+                          "main" {:output-to (get-resources entry)
                                   :target    :nodejs}
                           {:output-to  (get-path (fs/parent renderer-output-dir)
                                                  entry)
