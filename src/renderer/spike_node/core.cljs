@@ -17,7 +17,7 @@
        (m/<$> keyword)
        (frp/stepper new)))
 
-(def grid-y
+(def cursor-y
   (->> file-behavior
        (frp/snapshot (m/<> (aid/<$ (aid/if-then pos?
                                                 dec)
@@ -28,12 +28,12 @@
        (frp/accum {new 0})))
 
 (defn app-component
-  [grid-y*]
+  [cursor-y*]
   [:div {:style {:background-color "black"
                  :height           "100%"}}])
 
 (def app
-  (m/<$> app-component grid-y))
+  (m/<$> app-component cursor-y))
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
