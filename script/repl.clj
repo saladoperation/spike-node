@@ -1,5 +1,6 @@
 (ns repl
-  (:require [figwheel-sidecar.repl-api :as repl-api]))
+  (:require [figwheel-sidecar.repl-api :as repl-api]
+            [me.raynes.fs :as fs]))
 
 (def argument
   (first *command-line-args*))
@@ -7,19 +8,31 @@
 (def id
   "app")
 
+(def entry
+  "main.js")
+
+(def asset-path
+  "js/out")
+
+(def renderer-output-dir
+  (str "resources/public/" asset-path))
+
 (def build
   {:id           id
    :source-paths [(str "src/" argument)]
-   :compiler     {:output-to            (str "resources/"
-                                             (case argument
-                                               "main" ""
-                                               "public/js/")
-                                             "main.js")
-                  :main                 "spike-node.core"
-                  :target               :nodejs
-                  :preloads             ['devtools.preload]
-                  :source-map-timestamp true
-                  :external-config      {:devtools/config {:features-to-install :all}}}
+   :compiler     (merge {:output-to            (str "resources/" entry)
+                         :main                 "spike-node.core"
+                         :target               :nodejs
+                         :preloads             ['devtools.preload]
+                         :source-map-timestamp true
+                         :external-config      {:devtools/config {:features-to-install :all}}}
+                        (case argument
+                          "main" {}
+                          {:output-to  (str (fs/parent renderer-output-dir)
+                                            "/"
+                                            entry)
+                           :output-dir renderer-output-dir
+                           :asset-path asset-path}))
    :figwheel     true})
 
 (repl-api/start-figwheel! {:all-builds       [build]
