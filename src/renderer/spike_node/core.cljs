@@ -1,6 +1,6 @@
 (ns spike-node.core
-  (:require [cats.core :as m]
-            [aid.core :as aid]
+  (:require [aid.core :as aid]
+            [cats.core :as m]
             [cljsjs.mousetrap]
             [com.rpl.specter :as s]
             [frp.core :as frp]
