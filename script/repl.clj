@@ -1,6 +1,7 @@
 (ns repl
   (:require [figwheel-sidecar.repl-api :as repl-api]
-            [me.raynes.fs :as fs]))
+            [me.raynes.fs :as fs]
+            [clojure.string :as str]))
 
 (def argument
   (first *command-line-args*))
@@ -14,23 +15,25 @@
 (def asset-path
   "js/out")
 
+(def get-path
+  (comp (partial str/join "/")
+        vector))
+
 (def renderer-output-dir
-  ;TODO use join-paths
-  (str "resources/public/" asset-path))
+  (get-path "resources/public" asset-path))
 
 (def build
   {:id           id
-   :source-paths [(str "src/" argument)]
+   :source-paths [(get-path "src" argument)]
    :compiler     (merge {:main                 "spike-node.core"
                          :preloads             ['devtools.preload]
                          :source-map-timestamp true
                          :external-config      {:devtools/config {:features-to-install :all}}}
                         (case argument
-                          "main" {:output-to (str "resources/" entry)
+                          "main" {:output-to (get-path "resources" entry)
                                   :target    :nodejs}
-                          {:output-to  (str (fs/parent renderer-output-dir)
-                                            "/"
-                                            entry)
+                          {:output-to  (get-path (fs/parent renderer-output-dir)
+                                                 entry)
                            :output-dir renderer-output-dir
                            :asset-path asset-path}))
    :figwheel     true})
