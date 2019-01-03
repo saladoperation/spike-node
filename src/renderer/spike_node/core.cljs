@@ -17,7 +17,7 @@
        (m/<$> keyword)
        (frp/stepper new)))
 
-(def cursor-y
+(def file-y
   (->> file-behavior
        (frp/snapshot (m/<> (aid/<$ (aid/if-then pos?
                                                 dec)
@@ -27,13 +27,26 @@
                 (partial s/transform* k f)))
        (frp/accum {new 0})))
 
+(def active-y
+  ((aid/lift-a aid/funcall)
+    file-behavior
+    (frp/stepper {new 0} file-y)))
+
+(def size
+  32)
+
 (defn app-component
-  [cursor-y*]
-  [:div {:style {:background-color "black"
-                 :height           "100%"}}])
+  [active-y*]
+  [:svg {:style {:background-color "black"
+                 :height           "100%"
+                 :width            "100%"}}
+   [:rect {:y      (* active-y* size)
+           :width  size
+           :height size
+           :stroke "white"}]])
 
 (def app
-  (m/<$> app-component cursor-y))
+  (m/<$> app-component active-y))
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
