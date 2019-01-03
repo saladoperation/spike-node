@@ -10,10 +10,10 @@
 (def build
   {:id           id
    :source-paths [(str "src/" argument)]
-   :compiler     {:output-to            (str "resources/public/"
+   :compiler     {:output-to            (str "resources/"
                                              (case argument
                                                "main" ""
-                                               "js/")
+                                               "public/js/")
                                              "main.js")
                   :main                 "spike-node.core"
                   :target               :nodejs

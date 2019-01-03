@@ -1,5 +1,5 @@
 {
-  "main": "resources/public/main.js",
+  "main": "resources/main.js",
   "devDependencies": {
     "electron": "3.0.13",
     "ws": "6.1.2"
