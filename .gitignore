@@ -122,3 +122,4 @@ typings/
 figwheel_server.log
 resources/public/main.js
 resources/public/out
+resources/public/js

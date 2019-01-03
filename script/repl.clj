@@ -12,8 +12,8 @@
    :source-paths [(str "src/" argument)]
    :compiler     {:output-to            (str "resources/public/"
                                              (case argument
-                                                   "main" ""
-                                                   "js")
+                                               "main" ""
+                                               "js/")
                                              "main.js")
                   :main                 "spike-node.core"
                   :target               :nodejs
@@ -22,8 +22,10 @@
                   :external-config      {:devtools/config {:features-to-install :all}}}
    :figwheel     true})
 
-(repl-api/start-figwheel!
-  {:build-ids  [id]
-   :all-builds [build]})
+(repl-api/start-figwheel! {:all-builds       [build]
+                           :build-ids        [id]
+                           :figwheel-options (case argument
+                                               "main" {}
+                                               {:server-port 3450})})
 
 (repl-api/cljs-repl)
