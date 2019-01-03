@@ -11,6 +11,7 @@
        (doto
          (electron.BrowserWindow. {})
          (.loadURL (str/join "/" ["file:/"
+                                  ;TODO deal with advanced optimizations
                                   (-> js/__dirname
                                       fs/dirname
                                       fs/dirname)
