@@ -1,7 +1,17 @@
-(ns spike-node.core)
+(ns spike-node.core
+  (:require [clojure.string :as str]
+            [cljs-node-io.fs :as fs]))
 
 (def electron
   (js/require "electron"))
 
-(.on (.-app electron) "ready" (fn [_]
-                                (electron.BrowserWindow. {})))
+(.on (.-app electron)
+     "ready"
+     (fn [_]
+       (doto
+         (electron.BrowserWindow. {})
+         (.loadURL (str/join "/" ["file:/"
+                                  (-> js/__dirname
+                                      fs/dirname
+                                      fs/dirname)
+                                  "index.html"])))))
