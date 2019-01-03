@@ -3,6 +3,4 @@
 (def electron
   (js/require "electron"))
 
-(def app (.-app electron))
-
-(.on app "ready" (fn [_]))
+(.on (.-app electron) "ready" (fn [_]))
