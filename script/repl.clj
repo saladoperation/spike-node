@@ -6,7 +6,7 @@
 
 (def build
   {:id           "app"
-   :source-paths ["src"]
+   :source-paths [(str "src/" argument)]
    :compiler     {:output-to            (str "public/js/" argument ".js")
                   :main                 "spike-node.core"
                   :asset-path           (str/join "/" ["/js" argument "out"])
