@@ -4,7 +4,8 @@
             [cljsjs.mousetrap]
             [com.rpl.specter :as s]
             [frp.core :as frp]
-            [nano-id.core :refer [nano-id]]))
+            [nano-id.core :refer [nano-id]]
+            [reagent.core :as r]))
 
 (def new
   (keyword (nano-id)))
@@ -25,6 +26,16 @@
        (m/<$> (fn [[f k]]
                 (partial s/transform* k f)))
        (frp/accum {new 0})))
+
+(defn app-component
+  [grid-x*]
+  [:div {:style {:background-color "black"
+                 :height           "100%"}}])
+
+(def app
+  (m/<$> app-component grid-x))
+
+(frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
 (js/Mousetrap.bind "j" #(down))
 
