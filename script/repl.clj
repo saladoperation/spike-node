@@ -1,7 +1,7 @@
 (ns repl
-  (:require [figwheel-sidecar.repl-api :as repl-api]
-            [me.raynes.fs :as fs]
-            [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [figwheel-sidecar.repl-api :as repl-api]
+            [me.raynes.fs :as fs]))
 
 (def argument
   (first *command-line-args*))
