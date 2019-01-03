@@ -21,14 +21,13 @@
 (def build
   {:id           id
    :source-paths [(str "src/" argument)]
-   :compiler     (merge {:output-to            (str "resources/" entry)
-                         :main                 "spike-node.core"
-                         :target               :nodejs
+   :compiler     (merge {:main                 "spike-node.core"
                          :preloads             ['devtools.preload]
                          :source-map-timestamp true
                          :external-config      {:devtools/config {:features-to-install :all}}}
                         (case argument
-                          "main" {}
+                          "main" {:output-to (str "resources/" entry)
+                                  :target    :nodejs}
                           {:output-to  (str (fs/parent renderer-output-dir)
                                             "/"
                                             entry)
