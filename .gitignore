@@ -57,3 +57,7 @@ pom.xml.asc
 .lein-plugins/
 .lein-failures
 .nrepl-port
+
+### spike-node
+figwheel_server.log
+dev-resources/public/js
