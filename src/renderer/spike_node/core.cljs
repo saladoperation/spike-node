@@ -22,7 +22,8 @@
                                                 dec)
                                    up)
                            (aid/<$ inc down)))
-       (m/<$> (fn [[f k]] (partial s/transform* k f)))
+       (m/<$> (fn [[f k]]
+                (partial s/transform* k f)))
        (frp/accum {new 0})))
 
 (js/Mousetrap.bind "j" #(down))
