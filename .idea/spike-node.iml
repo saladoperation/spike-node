@@ -70,6 +70,7 @@
     <orderEntry type="library" name="Leiningen: jarohen/chime:0.2.2" level="project" />
     <orderEntry type="library" name="Leiningen: joda-time:2.10" level="project" />
     <orderEntry type="library" name="Leiningen: me.raynes/fs:1.4.6" level="project" />
+    <orderEntry type="library" name="Leiningen: nano-id:0.9.3" level="project" />
     <orderEntry type="library" name="Leiningen: net.cgrand/parsley:0.9.3" level="project" />
     <orderEntry type="library" name="Leiningen: net.cgrand/regex:1.1.0" level="project" />
     <orderEntry type="library" name="Leiningen: net.cgrand/sjacket:0.1.1" level="project" />
