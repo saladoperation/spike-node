@@ -10,15 +10,15 @@
 (def build
   {:id           "app"
    :source-paths [(str "src/" argument)]
-   :compiler     {:output-to            (str "dev-resources/public/"
+   :compiler     {:output-to            (str "resources/public/"
                                              (case argument
                                                    "main" ""
                                                    "js")
                                              "main.js")
                   :main                 "spike-node.core"
-                  :asset-path           "/js/out"
-                  :source-map-timestamp true
+                  :target               :nodejs
                   :preloads             ['devtools.preload]
+                  :source-map-timestamp true
                   :external-config      {:devtools/config {:features-to-install :all}}}
    :figwheel     true})
 
