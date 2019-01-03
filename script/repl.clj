@@ -15,6 +15,7 @@
   "js/out")
 
 (def renderer-output-dir
+  ;TODO use join-paths
   (str "resources/public/" asset-path))
 
 (def build
