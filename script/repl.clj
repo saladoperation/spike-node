@@ -8,7 +8,7 @@
   "app")
 
 (def build
-  {:id           "app"
+  {:id           id
    :source-paths [(str "src/" argument)]
    :compiler     {:output-to            (str "resources/public/"
                                              (case argument
