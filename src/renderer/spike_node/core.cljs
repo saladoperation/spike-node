@@ -13,7 +13,7 @@
 (def new
   (keyword (nano-id)))
 
-(frp/defe file-event down up left right insert keydown status text)
+(frp/defe file-event down up left right insert keydown status text undo redo)
 
 (def file-behavior
   (->> file-event
@@ -36,17 +36,14 @@
   (get-cursor down up))
 
 (def initial-table
-  {:pair {}
-   :x-y  (sorted-map)
-   :y-x  (sorted-map)})
+  {:pair (sorted-map)
+   :x-y  {}
+   :y-x  {}})
 
 (def initial-content
   [[{:node initial-table
      :edge (graph/digraph)}]
    []])
-
-(def size
-  16)
 
 (def normal
   (->> status
@@ -60,6 +57,27 @@
                                (comp (partial = "")
                                      last
                                      first)))))
+
+(def action
+  (m/<$> (fn [[_ x y s]]
+           (comp (partial s/setval*
+                          [s/FIRST
+                           s/FIRST
+                           :node
+                           ;TODO set :x-y and :y-x
+                           (s/multi-path [:pair (s/keypath [y x])])
+                           :text]
+                          s)
+                 (aid/transfer* [s/FIRST s/BEFORE-ELEM]
+                                ffirst)))
+         (frp/snapshot normal cursor-x cursor-y (frp/stepper "" text))))
+
+(def content
+  ;TODO implement undo and redo
+  (frp/accum initial-content (m/<> action undo redo)))
+
+(def size
+  16)
 
 (def mode
   (->> insert
