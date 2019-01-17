@@ -5,6 +5,7 @@
             [cljsjs.mousetrap]
             [frp.clojure.core :as core]
             [frp.core :as frp]
+            [loom.graph :as graph]
             [nano-id.core :refer [nano-id]]
             [reagent.core :as r]))
 
@@ -25,6 +26,16 @@
              (aid/<$ inc down))
        (frp/accum 0)
        (frp/stepper 0)))
+
+(def initial-table
+  {:pair {}
+   :x-y  (sorted-map)
+   :y-x  (sorted-map)})
+
+(def initial-content
+  [[{:node initial-table
+     :edge (graph/digraph)}]
+   []])
 
 (def size
   16)
