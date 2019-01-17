@@ -5,12 +5,13 @@
             [cljsjs.mousetrap]
             [frp.core :as frp]
             [nano-id.core :refer [nano-id]]
-            [reagent.core :as r]))
+            [reagent.core :as r]
+            [frp.clojure.core :as core]))
 
 (def new
   (keyword (nano-id)))
 
-(frp/defe file-event up down insert)
+(frp/defe file-event up down insert keydown)
 
 (def file-behavior
   (->> file-event
@@ -28,6 +29,35 @@
 (def size
   16)
 
+(def normal
+  (core/filter (partial = "Escape") keydown))
+
+(def mode
+  (->> insert
+       (aid/<$ :insert)
+       (m/<> (aid/<$ :normal normal))
+       (frp/stepper :normal)))
+
+(defn editor
+  [mode*]
+  (let [editor-state (atom {})]
+    [(with-meta (fn [mode**]
+                  [:> ace-editor
+                   {:keyboardHandler "vim"
+                    :ref             (partial reset! editor-state)
+                    :mode            "latex"
+                    :focus           (= :insert mode**)
+                    :style           {:font-size size}
+                    :theme           "terminal"}])
+                {:component-did-mount (fn []
+                                        (-> @editor-state
+                                            .editor.textInput.getElement
+                                            (.addEventListener "keydown"
+                                                               #(-> %
+                                                                    .-key
+                                                                    keydown))))})
+     mode*]))
+
 (defn app-component
   [cursor-y* mode*]
   [:div {:style {:background-color "black"
@@ -38,14 +68,7 @@
             :stroke "white"
             :width  size
             :y      (* cursor-y* size)}]]
-   [:> ace-editor
-    {:keyboardHandler "vim"
-     :mode            "latex"
-     :style           {:font-size size}
-     :theme           "terminal"}]])
-
-(def mode
-  (frp/stepper :normal (aid/<$ :insert insert)))
+   [editor mode*]])
 
 (def app
   ((aid/lift-a app-component) cursor-y mode))
