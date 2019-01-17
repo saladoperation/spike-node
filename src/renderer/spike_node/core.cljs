@@ -58,18 +58,20 @@
                                      first)))))
 
 (def action
-  (m/<$> (fn [[_ x y s]]
-           (comp (partial s/setval*
-                          [s/FIRST
-                           s/FIRST
-                           :node
-                           (s/multi-path [:y-x (s/keypath [y x])]
-                                         [:x-y (s/keypath [x y])])
-                           :text]
-                          s)
-                 (aid/transfer* [s/FIRST s/BEFORE-ELEM]
-                                ffirst)))
-         (frp/snapshot normal cursor-x cursor-y (frp/stepper "" text))))
+  (->> text
+       (frp/stepper "")
+       (frp/snapshot normal cursor-x cursor-y)
+       (m/<$> (fn [[_ x y s]]
+                (comp (partial s/setval*
+                               [s/FIRST
+                                s/FIRST
+                                :node
+                                (s/multi-path [:y-x (s/keypath [y x])]
+                                              [:x-y (s/keypath [x y])])
+                                :text]
+                               s)
+                      (aid/transfer* [s/FIRST s/BEFORE-ELEM]
+                                     ffirst))))))
 
 (def content
   ;TODO implement undo and redo
