@@ -9,7 +9,7 @@
 (def new
   (keyword (nano-id)))
 
-(frp/defe file-event up down)
+(frp/defe file-event up down insert)
 
 (def file-behavior
   (->> file-event
@@ -21,13 +21,14 @@
                                   dec)
                      up)
              (aid/<$ inc down))
-       (frp/accum 0)))
+       (frp/accum 0)
+       (frp/stepper 0)))
 
 (def size
   32)
 
 (defn app-component
-  [cursor-y*]
+  [cursor-y* mode*]
   [:svg {:style {:background-color "black"
                  :height           "100%"
                  :width            "100%"}}
@@ -36,13 +37,18 @@
            :height size
            :stroke "white"}]])
 
+(def mode
+  (frp/stepper :normal (aid/<$ :insert insert)))
+
 (def app
-  (m/<$> app-component cursor-y))
+  ((aid/lift-a app-component) cursor-y mode))
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
 (js/Mousetrap.bind "j" #(down))
 
 (js/Mousetrap.bind "k" #(up))
+
+(js/Mousetrap.bind "i" #(insert))
 
 (frp/activate)
