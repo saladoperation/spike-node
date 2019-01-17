@@ -1,5 +1,6 @@
 (ns spike-node.core
-  (:require [aid.core :as aid]
+  (:require [ace-editor]
+            [aid.core :as aid]
             [cats.core :as m]
             [cljsjs.mousetrap]
             [frp.core :as frp]
@@ -36,7 +37,11 @@
     [:rect {:height size
             :stroke "white"
             :width  size
-            :y      (* cursor-y* size)}]]])
+            :y      (* cursor-y* size)}]]
+   [:> ace-editor
+    {:keyboardHandler "vim"
+     :mode            "latex"
+     :theme           "terminal"}]])
 
 (def mode
   (frp/stepper :normal (aid/<$ :insert insert)))

@@ -33,9 +33,12 @@
           :preloads             ['devtools.preload]
           :source-map-timestamp true
           :foreign-libs         [{:file           "dist/index_bundle.js"
-                                  :provides       ["react" "react-dom"]
-                                  :global-exports {'react     'React
-                                                   'react-dom 'ReactDOM}}]
+                                  :provides       ["ace-editor"
+                                                   "react"
+                                                   "react-dom"]
+                                  :global-exports {'ace-editor 'AceEditor
+                                                   'react      'React
+                                                   'react-dom  'ReactDOM}}]
           :external-config      {:devtools/config {:features-to-install :all}}}
          (if main
            {:output-to (get-resources entry)
