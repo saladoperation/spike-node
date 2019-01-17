@@ -29,13 +29,14 @@
 
 (defn app-component
   [cursor-y* mode*]
-  [:svg {:style {:background-color "black"
+  [:div {:style {:background-color "black"
                  :height           "100%"
                  :width            "100%"}}
-   [:rect {:y      (* cursor-y* size)
-           :width  size
-           :height size
-           :stroke "white"}]])
+   [:svg {:style {:height "80%"}}
+    [:rect {:y      (* cursor-y* size)
+            :width  size
+            :height size
+            :stroke "white"}]]])
 
 (def mode
   (frp/stepper :normal (aid/<$ :insert insert)))
