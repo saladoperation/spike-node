@@ -63,7 +63,8 @@
                                (->> %
                                     .-editor
                                     (reset! editor-state)))
-           :style           {:font-size size}
+           :style           {:font-size size
+                             :height    "20%"}
            :theme           "terminal"}])
        {:component-did-mount
         (fn []
