@@ -32,6 +32,10 @@
   (merge {:main                 "spike-node.core"
           :preloads             ['devtools.preload]
           :source-map-timestamp true
+          :foreign-libs         [{:file           "dist/index_bundle.js"
+                                  :provides       ["react" "react-dom"]
+                                  :global-exports {'react     'React
+                                                   'react-dom 'ReactDOM}}]
           :external-config      {:devtools/config {:features-to-install :all}}}
          (if main
            {:output-to (get-resources entry)
