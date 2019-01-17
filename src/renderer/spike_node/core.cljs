@@ -33,10 +33,10 @@
                  :height           "100%"
                  :width            "100%"}}
    [:svg {:style {:height "80%"}}
-    [:rect {:y      (* cursor-y* size)
+    [:rect {:height size
+            :stroke "white"
             :width  size
-            :height size
-            :stroke "white"}]]])
+            :y      (* cursor-y* size)}]]])
 
 (def mode
   (frp/stepper :normal (aid/<$ :insert insert)))
