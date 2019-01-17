@@ -65,6 +65,7 @@
            :theme           "terminal"}])
        {:component-did-mount
         (fn []
+          (.on @editor-state "focus" #(insert))
           (.on @editor-state
                "changeStatus"
                #(status (.keyBinding.getStatusText @editor-state
