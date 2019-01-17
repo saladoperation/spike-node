@@ -39,9 +39,9 @@
             :width  size
             :y      (* cursor-y* size)}]]
    [:> ace-editor
-    {:style           {:font-size size}
-     :keyboardHandler "vim"
+    {:keyboardHandler "vim"
      :mode            "latex"
+     :style           {:font-size size}
      :theme           "terminal"}]])
 
 (def mode
