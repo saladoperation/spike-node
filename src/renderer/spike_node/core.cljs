@@ -11,7 +11,7 @@
 (def new
   (keyword (nano-id)))
 
-(frp/defe file-event up down insert keydown status)
+(frp/defe file-event up down insert keydown status text)
 
 (def file-behavior
   (->> file-event
@@ -57,6 +57,7 @@
           {:focus           (= :insert mode**)
            :keyboardHandler "vim"
            :mode            "latex"
+           :onChange        #(text %)
            :onFocus         #(insert)
            :ref             #(if %
                                (->> %
