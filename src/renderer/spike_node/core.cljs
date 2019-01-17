@@ -64,7 +64,8 @@
                                     .-editor
                                     (reset! editor-state)))
            :style           {:font-size size
-                             :height    "20%"}
+                             :height    "20%"
+                             :width     "100%"}
            :theme           "terminal"}])
        {:component-did-mount
         (fn []
