@@ -30,21 +30,23 @@
   16)
 
 (def normal
-  (core/filter (partial = "Escape") keydown))
+  (->> status
+       (frp/stepper "")
+       (frp/snapshot keydown)
+       (core/partition 2 1)
+       (core/filter (aid/build and
+                               (comp (partial = "Escape")
+                                     first
+                                     last)
+                               (comp (partial = "")
+                                     last
+                                     first)))))
 
 (def mode
   (->> insert
        (aid/<$ :insert)
        (m/<> (aid/<$ :normal normal))
        (frp/stepper :normal)))
-
-(def previous-status
-  (->> status
-       (frp/stepper "")
-       (frp/snapshot keydown)
-       (core/partition 2 1)
-       (m/<$> (comp last
-                    first))))
 
 (defn editor
   [mode*]
