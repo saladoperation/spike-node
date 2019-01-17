@@ -36,9 +36,8 @@
   (get-cursor down up))
 
 (def initial-table
-  {:pair (sorted-map)
-   :x-y  {}
-   :y-x  {}})
+  {:y-x (sorted-map)
+   :x-y (sorted-map)})
 
 (def initial-content
   [[{:node initial-table
@@ -64,8 +63,8 @@
                           [s/FIRST
                            s/FIRST
                            :node
-                           ;TODO set :x-y and :y-x
-                           (s/multi-path [:pair (s/keypath [y x])])
+                           (s/multi-path [:y-x (s/keypath [y x])]
+                                         [:x-y (s/keypath [x y])])
                            :text]
                           s)
                  (aid/transfer* [s/FIRST s/BEFORE-ELEM]
