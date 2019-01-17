@@ -26,7 +26,7 @@
        (frp/stepper 0)))
 
 (def size
-  32)
+  16)
 
 (defn app-component
   [cursor-y* mode*]
@@ -39,7 +39,8 @@
             :width  size
             :y      (* cursor-y* size)}]]
    [:> ace-editor
-    {:keyboardHandler "vim"
+    {:style           {:font-size size}
+     :keyboardHandler "vim"
      :mode            "latex"
      :theme           "terminal"}]])
 
