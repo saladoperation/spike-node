@@ -3,6 +3,7 @@
             [aid.core :as aid]
             [cats.core :as m]
             [cljsjs.mousetrap]
+            [com.rpl.specter :as s]
             [frp.clojure.core :as core]
             [frp.core :as frp]
             [loom.graph :as graph]
@@ -12,20 +13,27 @@
 (def new
   (keyword (nano-id)))
 
-(frp/defe file-event up down insert keydown status text)
+(frp/defe file-event down up left right insert keydown status text)
 
 (def file-behavior
   (->> file-event
        (m/<$> keyword)
        (frp/stepper new)))
 
-(def cursor-y
+(defn get-cursor
+  [plus minus]
   (->> (m/<> (aid/<$ (aid/if-then pos?
                                   dec)
-                     up)
-             (aid/<$ inc down))
+                     minus)
+             (aid/<$ inc plus))
        (frp/accum 0)
        (frp/stepper 0)))
+
+(def cursor-x
+  (get-cursor right left))
+
+(def cursor-y
+  (get-cursor down up))
 
 (def initial-table
   {:pair {}
@@ -93,7 +101,7 @@
      mode*]))
 
 (defn app-component
-  [cursor-y* mode*]
+  [cursor-x* cursor-y* mode*]
   [:div {:style {:background-color "black"
                  :height           "100%"
                  :width            "100%"}}
@@ -101,17 +109,22 @@
     [:rect {:height size
             :stroke "white"
             :width  size
+            :x      (* cursor-x* size)
             :y      (* cursor-y* size)}]]
    [editor mode*]])
 
 (def app
-  ((aid/lift-a app-component) cursor-y mode))
+  ((aid/lift-a app-component) cursor-x cursor-y mode))
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
 (js/Mousetrap.bind "j" #(down))
 
 (js/Mousetrap.bind "k" #(up))
+
+(js/Mousetrap.bind "h" #(left))
+
+(js/Mousetrap.bind "l" #(right))
 
 (js/Mousetrap.bind "i" #(insert))
 
