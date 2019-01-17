@@ -54,18 +54,18 @@
     [(with-meta
        (fn [mode**]
          [:> ace-editor
-          {:keyboardHandler "vim"
+          {:focus           (= :insert mode**)
+           :keyboardHandler "vim"
+           :mode            "latex"
+           :onFocus         #(insert)
            :ref             #(if %
                                (->> %
                                     .-editor
                                     (reset! editor-state)))
-           :mode            "latex"
-           :focus           (= :insert mode**)
            :style           {:font-size size}
            :theme           "terminal"}])
        {:component-did-mount
         (fn []
-          (.on @editor-state "focus" #(insert))
           (.on @editor-state
                "changeStatus"
                #(status (.keyBinding.getStatusText @editor-state
