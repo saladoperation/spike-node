@@ -3,15 +3,15 @@
             [aid.core :as aid]
             [cats.core :as m]
             [cljsjs.mousetrap]
+            [frp.clojure.core :as core]
             [frp.core :as frp]
             [nano-id.core :refer [nano-id]]
-            [reagent.core :as r]
-            [frp.clojure.core :as core]))
+            [reagent.core :as r]))
 
 (def new
   (keyword (nano-id)))
 
-(frp/defe file-event up down insert keydown)
+(frp/defe file-event up down insert keydown status)
 
 (def file-behavior
   (->> file-event
@@ -38,24 +38,41 @@
        (m/<> (aid/<$ :normal normal))
        (frp/stepper :normal)))
 
+(def previous-status
+  (->> status
+       (frp/stepper "")
+       (frp/snapshot keydown)
+       (core/partition 2 1)
+       (m/<$> (comp last
+                    first))))
+
 (defn editor
   [mode*]
   (let [editor-state (atom {})]
-    [(with-meta (fn [mode**]
-                  [:> ace-editor
-                   {:keyboardHandler "vim"
-                    :ref             (partial reset! editor-state)
-                    :mode            "latex"
-                    :focus           (= :insert mode**)
-                    :style           {:font-size size}
-                    :theme           "terminal"}])
-                {:component-did-mount (fn []
-                                        (-> @editor-state
-                                            .editor.textInput.getElement
-                                            (.addEventListener "keydown"
-                                                               #(-> %
-                                                                    .-key
-                                                                    keydown))))})
+    [(with-meta
+       (fn [mode**]
+         [:> ace-editor
+          {:keyboardHandler "vim"
+           :ref             #(if %
+                               (->> %
+                                    .-editor
+                                    (reset! editor-state)))
+           :mode            "latex"
+           :focus           (= :insert mode**)
+           :style           {:font-size size}
+           :theme           "terminal"}])
+       {:component-did-mount
+        (fn []
+          (.on @editor-state
+               "changeStatus"
+               #(status (.keyBinding.getStatusText @editor-state
+                                                   @editor-state)))
+          (-> @editor-state
+              .textInput.getElement
+              (.addEventListener "keydown"
+                                 #(-> %
+                                      .-key
+                                      keydown))))})
      mode*]))
 
 (defn app-component
