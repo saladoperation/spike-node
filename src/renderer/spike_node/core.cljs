@@ -15,7 +15,7 @@
 (def new
   (keyword (nano-id)))
 
-(frp/defe file-event down up left right insert keydown status text undo redo)
+(frp/defe file-event down up left right insert keydown status typing undo redo)
 
 (def file-behavior
   (->> file-event
@@ -60,7 +60,7 @@
                                      first)))))
 
 (def action
-  (->> text
+  (->> typing
        (frp/stepper "")
        (frp/snapshot normal cursor-x cursor-y)
        (m/<$> (fn [[_ x y s]]
@@ -80,12 +80,24 @@
   (frp/accum initial-content (m/<> action undo redo)))
 
 (def current-node
-  (->> content
-       (m/<$> (comp (partial s/transform* s/MAP-VALS :text)
-                    :x-y
-                    :node
-                    ffirst))
+  (->> (m/<> (m/<$> (fn [[s x y]]
+                      (partial s/setval* (s/keypath [x y]) s))
+                    (frp/snapshot typing cursor-x cursor-y))
+             (m/<$> (comp constantly
+                          (partial s/transform* s/MAP-VALS :text)
+                          :x-y
+                          :node
+                          ffirst)
+                    content))
+       (frp/accum {})
        (frp/stepper {})))
+
+(def text
+  ((aid/lift-a (fn [x y m]
+                 (get m [x y] "")))
+    cursor-x
+    cursor-y
+    current-node))
 
 (def font-size
   18)
@@ -100,39 +112,43 @@
        (frp/stepper :normal)))
 
 (defn editor
-  [mode*]
-  (let [editor-state (atom {})]
-    (r/create-class {:component-did-mount
-                     (fn [_]
-                       (.on @editor-state
-                            "changeStatus"
-                            #(status (.keyBinding.getStatusText @editor-state
-                                                                @editor-state)))
-                       (-> @editor-state
-                           .textInput.getElement
-                           (.addEventListener "keydown"
-                                              #(-> %
-                                                   .-key
-                                                   keydown))))
-                     :component-did-update
-                     (fn [_]
-                       (.blur @editor-state))
-                     :reagent-render
-                     (fn [mode*]
-                       [:> ace-editor
-                        {:focus           (= :insert mode*)
-                         :keyboardHandler "vim"
-                         :mode            "latex"
-                         :onChange        #(text %)
-                         :onFocus         #(insert)
-                         :ref             #(if %
-                                             (->> %
-                                                  .-editor
-                                                  (reset! editor-state)))
-                         :style           {:font-size font-size
-                                           :height    "20%"
-                                           :width     "100%"}
-                         :theme           "terminal"}])})))
+  [mode* text*]
+  (let [state (atom {})]
+    (r/create-class
+      {:component-did-mount
+       (fn [_]
+         (.on (:editor @state)
+              "changeStatus"
+              #(status (.keyBinding.getStatusText (:editor @state)
+                                                  (:editor @state))))
+         (-> @state
+             :editor
+             .textInput.getElement
+             (.addEventListener "keydown"
+                                #(-> %
+                                     .-key
+                                     keydown))))
+       :component-did-update
+       (fn [_]
+         (if (= :normal (:mode @state))
+           (.blur (:editor @state))))
+       :reagent-render
+       (fn [mode* text*]
+         (swap! state (partial s/setval* :mode mode*))
+         [:> ace-editor
+          {:focus           (= :insert mode*)
+           :keyboardHandler "vim"
+           :mode            "latex"
+           :value           text*
+           :onChange        #(typing %)
+           :onFocus         #(insert)
+           :ref             #(if %
+                               (swap! state
+                                      (partial s/setval* :editor (.-editor %))))
+           :style           {:font-size font-size
+                             :height    "20%"
+                             :width     "100%"}
+           :theme           "terminal"}])})))
 
 (defn math
   [s]
@@ -151,25 +167,25 @@
   (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
 
 (defn app-component
-  [cursor-x* cursor-y* mode* current-node*]
+  [cursor-x* cursor-y* mode* current-node* text*]
   [:div {:style {:background-color "black"
                  :color            "white"
                  :height           "100%"
                  :width            "100%"}}
    (s/setval s/END
              (->> current-node*
-                  (mapv (fn [[position text]]
-                          [math-node position text])))
+                  (mapv (fn [[position text**]]
+                          [math-node position text**])))
              [:svg {:style {:height "80%"}}
               [:rect {:height size
                       :stroke "white"
                       :width  size
                       :x      (* cursor-x* size)
                       :y      (* cursor-y* size)}]])
-   [editor mode*]])
+   [editor mode* text*]])
 
 (def app
-  ((aid/lift-a app-component) cursor-x cursor-y mode current-node))
+  ((aid/lift-a app-component) cursor-x cursor-y mode current-node text))
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
