@@ -130,8 +130,12 @@
                                      keydown))))
        :component-did-update
        (fn [_]
-         (if (= :normal (:mode @state))
-           (.blur (:editor @state))))
+         (if (-> @state
+                 :mode
+                 (= :normal))
+           (-> @state
+               :editor
+               .blur)))
        :reagent-render
        (fn [mode* text*]
          (swap! state (partial s/setval* :mode mode*))
