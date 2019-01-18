@@ -103,7 +103,7 @@
   [mode*]
   (let [editor-state (atom {})]
     (r/create-class {:component-did-mount
-                     (fn []
+                     (fn [_]
                        (.on @editor-state
                             "changeStatus"
                             #(status (.keyBinding.getStatusText @editor-state
