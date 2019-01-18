@@ -102,35 +102,34 @@
 (defn editor
   [mode*]
   (let [editor-state (atom {})]
-    [(with-meta
-       (fn [mode**]
-         [:> ace-editor
-          {:focus           (= :insert mode**)
-           :keyboardHandler "vim"
-           :mode            "latex"
-           :onChange        #(text %)
-           :onFocus         #(insert)
-           :ref             #(if %
-                               (->> %
-                                    .-editor
-                                    (reset! editor-state)))
-           :style           {:font-size font-size
-                             :height    "20%"
-                             :width     "100%"}
-           :theme           "terminal"}])
-       {:component-did-mount
-        (fn []
-          (.on @editor-state
-               "changeStatus"
-               #(status (.keyBinding.getStatusText @editor-state
-                                                   @editor-state)))
-          (-> @editor-state
-              .textInput.getElement
-              (.addEventListener "keydown"
-                                 #(-> %
-                                      .-key
-                                      keydown))))})
-     mode*]))
+    (r/create-class {:component-did-mount
+                     (fn []
+                       (.on @editor-state
+                            "changeStatus"
+                            #(status (.keyBinding.getStatusText @editor-state
+                                                                @editor-state)))
+                       (-> @editor-state
+                           .textInput.getElement
+                           (.addEventListener "keydown"
+                                              #(-> %
+                                                   .-key
+                                                   keydown))))
+                     :reagent-render
+                     (fn [mode*]
+                       [:> ace-editor
+                        {:focus           (= :insert mode*)
+                         :keyboardHandler "vim"
+                         :mode            "latex"
+                         :onChange        #(text %)
+                         :onFocus         #(insert)
+                         :ref             #(if %
+                                             (->> %
+                                                  .-editor
+                                                  (reset! editor-state)))
+                         :style           {:font-size font-size
+                                           :height    "20%"
+                                           :width     "100%"}
+                         :theme           "terminal"}])})))
 
 (defn math
   [s]
