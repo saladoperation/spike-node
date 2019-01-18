@@ -149,13 +149,13 @@
   (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
 
 (defn app-component
-  [cursor-x* cursor-y* mode* current-content*]
+  [cursor-x* cursor-y* mode* current-node*]
   [:div {:style {:background-color "black"
                  :color            "white"
                  :height           "100%"
                  :width            "100%"}}
    (s/setval s/END
-             (->> current-content*
+             (->> current-node*
                   (mapv (fn [[position text]]
                           [math-node position text])))
              [:svg {:style {:height "80%"}}
