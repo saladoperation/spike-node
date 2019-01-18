@@ -138,8 +138,8 @@
 
 (defn math-node
   [[x y] s]
-  [:foreignObject {:x x
-                   :y y}
+  [:foreignObject {:x (* x size)
+                   :y (* y size)}
    [math s]])
 
 (def align
