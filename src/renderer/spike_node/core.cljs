@@ -2,6 +2,7 @@
   (:require [ace-editor]
             [aid.core :as aid]
             [cats.core :as m]
+            [cljsjs.katex]
             [cljsjs.mousetrap]
             [com.rpl.specter :as s]
             [frp.clojure.core :as core]
@@ -119,9 +120,14 @@
                                       keydown))))})
      mode*]))
 
+(defn math
+  [s]
+  [:div {:dangerouslySetInnerHTML {:__html (js/katex.renderToString s)}}])
+
 (defn app-component
   [cursor-x* cursor-y* mode*]
   [:div {:style {:background-color "black"
+                 :color            "white"
                  :height           "100%"
                  :width            "100%"}}
    [:svg {:style {:height "80%"}}
