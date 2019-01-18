@@ -34,9 +34,11 @@
           :source-map-timestamp true
           :foreign-libs         [{:file           "dist/index_bundle.js"
                                   :provides       ["ace-editor"
+                                                   "katex"
                                                    "react"
                                                    "react-dom"]
                                   :global-exports {'ace-editor 'AceEditor
+                                                   'katex      'katex
                                                    'react      'React
                                                    'react-dom  'ReactDOM}}]
           :external-config      {:devtools/config {:features-to-install :all}}}

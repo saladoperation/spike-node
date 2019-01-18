@@ -3,11 +3,11 @@
             [ace-editor]
             [aid.core :as aid]
             [cats.core :as m]
-            [cljsjs.katex]
             [cljsjs.mousetrap]
             [com.rpl.specter :as s]
             [frp.clojure.core :as core]
             [frp.core :as frp]
+            [katex]
             [loom.graph :as graph]
             [nano-id.core :refer [nano-id]]
             [reagent.core :as r]))
