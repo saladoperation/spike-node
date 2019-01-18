@@ -1,5 +1,6 @@
 (ns spike-node.core
-  (:require [ace-editor]
+  (:require [clojure.string :as str]
+            [ace-editor]
             [aid.core :as aid]
             [cats.core :as m]
             [cljsjs.katex]
@@ -135,6 +136,9 @@
   [:foreignObject {:x x
                    :y y}
    [math s]])
+
+(def align
+  (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
 
 (defn app-component
   [cursor-x* cursor-y* mode*]
