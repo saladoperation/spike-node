@@ -82,7 +82,7 @@
 (def current-content
   (->> content
        (m/<$> ffirst)
-       (frp/stepper [])))
+       (frp/stepper {})))
 
 (def font-size
   18)
