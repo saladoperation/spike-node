@@ -78,8 +78,11 @@
   ;TODO implement undo and redo
   (frp/accum initial-content (m/<> action undo redo)))
 
+(def font-size
+  18)
+
 (def size
-  16)
+  (* font-size 3))
 
 (def mode
   (->> insert
@@ -102,7 +105,7 @@
                                (->> %
                                     .-editor
                                     (reset! editor-state)))
-           :style           {:font-size size
+           :style           {:font-size font-size
                              :height    "20%"
                              :width     "100%"}
            :theme           "terminal"}])
@@ -122,7 +125,16 @@
 
 (defn math
   [s]
-  [:div {:dangerouslySetInnerHTML {:__html (js/katex.renderToString s)}}])
+  [:div
+   {:dangerouslySetInnerHTML
+    {:__html (js/katex.renderToString s
+                                      #js {:displayMode true})}}])
+
+(defn math-node
+  [x y s]
+  [:foreignObject {:x x
+                   :y y}
+   [math s]])
 
 (defn app-component
   [cursor-x* cursor-y* mode*]
