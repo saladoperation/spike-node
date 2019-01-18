@@ -1,8 +1,11 @@
 {
   "main": "resources/main.js",
   "devDependencies": {
+    "css-loader": "2.1.0",
     "electron": "3.0.13",
+    "file-loader": "3.0.1",
     "nodemon": "1.18.9",
+    "style-loader": "0.23.1",
     "webpack": "4.28.4",
     "webpack-cli": "3.2.1",
     "ws": "6.1.2"

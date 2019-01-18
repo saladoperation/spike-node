@@ -29,26 +29,27 @@
   (= argument "main"))
 
 (def compiler
-  (merge {:main                 "spike-node.core"
-          :preloads             ['devtools.preload]
-          :source-map-timestamp true
-          :foreign-libs         [{:file           "dist/index_bundle.js"
-                                  :provides       ["ace-editor"
-                                                   "katex"
-                                                   "react"
-                                                   "react-dom"]
-                                  :global-exports {'ace-editor 'AceEditor
-                                                   'katex      'katex
-                                                   'react      'React
-                                                   'react-dom  'ReactDOM}}]
-          :external-config      {:devtools/config {:features-to-install :all}}}
-         (if main
-           {:output-to (get-resources entry)
-            :target    :nodejs}
-           {:output-to  (get-path (fs/parent renderer-output-dir)
-                                  entry)
-            :output-dir renderer-output-dir
-            :asset-path asset-path})))
+  (merge
+    {:main                 "spike-node.core"
+     :preloads             ['devtools.preload]
+     :source-map-timestamp true
+     :foreign-libs         [{:file           "resources/public/webpack/index_bundle.js"
+                             :provides       ["ace-editor"
+                                              "katex"
+                                              "react"
+                                              "react-dom"]
+                             :global-exports {'ace-editor 'AceEditor
+                                              'katex      'katex
+                                              'react      'React
+                                              'react-dom  'ReactDOM}}]
+     :external-config      {:devtools/config {:features-to-install :all}}}
+    (if main
+      {:output-to (get-resources entry)
+       :target    :nodejs}
+      {:output-to  (get-path (fs/parent renderer-output-dir)
+                             entry)
+       :output-dir renderer-output-dir
+       :asset-path asset-path})))
 
 (def build
   {:id           id

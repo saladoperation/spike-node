@@ -5,6 +5,7 @@ import ReactDOM from "react-dom";
 import "brace/keybinding/vim";
 import "brace/mode/latex";
 import "brace/theme/terminal";
+import "katex/dist/katex.css"
 
 window.AceEditor = AceEditor;
 window.katex = katex;
