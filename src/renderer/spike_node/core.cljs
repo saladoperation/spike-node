@@ -114,6 +114,9 @@
                                               #(-> %
                                                    .-key
                                                    keydown))))
+                     :component-did-update
+                     (fn [_]
+                       (.blur @editor-state))
                      :reagent-render
                      (fn [mode*]
                        [:> ace-editor
