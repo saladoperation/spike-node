@@ -79,6 +79,11 @@
   ;TODO implement undo and redo
   (frp/accum initial-content (m/<> action undo redo)))
 
+(def current-content
+  (->> content
+       (m/<$> ffirst)
+       (frp/stepper [])))
+
 (def font-size
   18)
 
@@ -132,7 +137,7 @@
                                       #js {:displayMode true})}}])
 
 (defn math-node
-  [x y s]
+  [[x y] s]
   [:foreignObject {:x x
                    :y y}
    [math s]])
@@ -141,21 +146,27 @@
   (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
 
 (defn app-component
-  [cursor-x* cursor-y* mode*]
+  [cursor-x* cursor-y* mode* current-content*]
   [:div {:style {:background-color "black"
                  :color            "white"
                  :height           "100%"
                  :width            "100%"}}
-   [:svg {:style {:height "80%"}}
-    [:rect {:height size
-            :stroke "white"
-            :width  size
-            :x      (* cursor-x* size)
-            :y      (* cursor-y* size)}]]
+   (s/setval s/END
+             (->> current-content*
+                  :node
+                  :x-y
+                  (mapv (fn [[position {:keys [text]}]]
+                          [math-node position text])))
+             [:svg {:style {:height "80%"}}
+              [:rect {:height size
+                      :stroke "white"
+                      :width  size
+                      :x      (* cursor-x* size)
+                      :y      (* cursor-y* size)}]])
    [editor mode*]])
 
 (def app
-  ((aid/lift-a app-component) cursor-x cursor-y mode))
+  ((aid/lift-a app-component) cursor-x cursor-y mode current-content))
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
