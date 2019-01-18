@@ -79,9 +79,12 @@
   ;TODO implement undo and redo
   (frp/accum initial-content (m/<> action undo redo)))
 
-(def current-content
+(def current-node
   (->> content
-       (m/<$> ffirst)
+       (m/<$> (comp (partial s/transform* s/MAP-VALS :text)
+                    :x-y
+                    :node
+                    ffirst))
        (frp/stepper {})))
 
 (def font-size
@@ -153,9 +156,7 @@
                  :width            "100%"}}
    (s/setval s/END
              (->> current-content*
-                  :node
-                  :x-y
-                  (mapv (fn [[position {:keys [text]}]]
+                  (mapv (fn [[position text]]
                           [math-node position text])))
              [:svg {:style {:height "80%"}}
               [:rect {:height size
@@ -166,7 +167,7 @@
    [editor mode*]])
 
 (def app
-  ((aid/lift-a app-component) cursor-x cursor-y mode current-content))
+  ((aid/lift-a app-component) cursor-x cursor-y mode current-node))
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
