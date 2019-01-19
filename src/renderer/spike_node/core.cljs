@@ -300,8 +300,7 @@
                                        "block")
                    :height           font-size}}
      (case error*
-       "" [:div {:style {:display "flex"}}
-           [command-component command-text*]]
+       "" [command-component command-text*]
        error*)]]])
 
 (def app
