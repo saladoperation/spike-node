@@ -91,9 +91,24 @@
                                                s)
                                       ffirst)))))))
 
+(def multiton?
+  (comp (partial < 1)
+        count))
+
 (def content
   ;TODO implement undo and redo
-  (frp/accum initial-content (m/<> action undo redo)))
+  (frp/accum initial-content
+             (m/<> action
+                   (aid/<$ (aid/if-then (comp multiton?
+                                              first)
+                                        (comp (partial s/transform*
+                                                       s/FIRST
+                                                       rest)
+                                              (aid/transfer* [s/LAST
+                                                              s/BEFORE-ELEM]
+                                                             ffirst)))
+                           undo)
+                   redo)))
 
 (defn get-error
   [s]
@@ -246,7 +261,8 @@
    "h"     left
    "l"     right
    "i"     insert
-   "space" insert})
+   "space" insert
+   "u"     undo})
 
 (bind-keymap keymap)
 
