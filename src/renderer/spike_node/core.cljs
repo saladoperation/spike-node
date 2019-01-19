@@ -7,6 +7,7 @@
             [com.rpl.specter :as s]
             [frp.clojure.core :as core]
             [frp.core :as frp]
+            [frp.window :as window]
             [katex]
             [loom.graph :as graph]
             [nano-id.core :refer [nano-id]]
@@ -300,7 +301,7 @@
                                        "block")
                    :height           font-size}}
      (case error*
-       "" [command-component command-text*]
+       "" [:form [command-component command-text*]]
        error*)]]])
 
 (def app
@@ -335,5 +336,9 @@
    "u"      undo})
 
 (bind-keymap keymap)
+
+(frp/run (comp aid/funcall
+               :prevent-default)
+         window/submit)
 
 (frp/activate)
