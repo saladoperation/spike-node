@@ -15,7 +15,7 @@
 (def new
   (keyword (nano-id)))
 
-(frp/defe file-event down up left right insert keydown status typing undo redo)
+(frp/defe file-event down up left right insert keydown typing undo redo)
 
 (def file-behavior
   (->> file-event
@@ -56,17 +56,13 @@
    []])
 
 (def normal
-  (->> status
-       (frp/stepper "")
-       (frp/snapshot keydown)
-       (core/partition 2 1)
-       (core/filter (aid/build and
-                               (comp (partial = "Escape")
-                                     first
-                                     last)
-                               (comp (partial = "")
-                                     last
-                                     first)))))
+  (core/filter (aid/build and
+                          (comp (partial = "")
+                                ffirst)
+                          (comp (partial = "Escape")
+                                last
+                                last))
+               (core/partition 2 1 keydown)))
 
 (def undo-size
   10)
@@ -182,17 +178,15 @@
     (r/create-class
       {:component-did-mount
        (fn [_]
-         (.on (:editor @state)
-              "changeStatus"
-              #(status (.keyBinding.getStatusText (:editor @state)
-                                                  (:editor @state))))
-         (-> @state
-             :editor
-             .textInput.getElement
-             (.addEventListener "keydown"
-                                #(-> %
-                                     .-key
-                                     keydown))))
+         (->
+           @state
+           :editor
+           .textInput.getElement
+           (.addEventListener
+             "keydown"
+             #(keydown [(.keyBinding.getStatusText (:editor @state)
+                                                   (:editor @state))
+                        (.-key %)]))))
        :component-did-update
        (fn [_]
          (if (-> @state
