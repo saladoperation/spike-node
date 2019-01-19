@@ -76,6 +76,9 @@
 (def command-escape
   (core/filter escape? command-keydown))
 
+(def command-exit
+  (m/<> command-escape submission))
+
 (def normal
   (->> insert
        (m/<$> vector)
@@ -87,7 +90,7 @@
                                (comp escape?
                                      last
                                      last)))
-       (m/<> normal-escape command-escape)))
+       (m/<> normal-escape command-exit)))
 
 (def undo-size
   10)
@@ -189,7 +192,7 @@
   (m/<$> get-error insert-text))
 
 (def command-text
-  (->> command-escape
+  (->> command-exit
        (aid/<$ "")
        (m/<> command-typing)
        (frp/stepper "")))
