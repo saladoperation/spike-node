@@ -274,11 +274,14 @@
                   :width          "50%"}}
     [editor mode* text*]
     [:div {:style {:background-color background-color
-                   :display          (case error*
-                                       "" "none"
+                   :display          (if (and (not= mode* :command)
+                                              (empty? error*))
+                                       "none"
                                        "block")
                    :height           font-size}}
-     error*]]])
+     (case error*
+       "" ":"
+       error*)]]])
 
 (def app
   ((aid/lift-a app-component)
