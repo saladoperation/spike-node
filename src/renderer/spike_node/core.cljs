@@ -22,21 +22,29 @@
        (m/<$> keyword)
        (frp/stepper new)))
 
-(defn get-cursor
+(defn get-cursor-event
   [plus minus]
   (->> (m/<> (aid/<$ (aid/if-then pos?
                                   dec)
                      minus)
              (aid/<$ inc plus))
        ;TODO extract a function
-       (frp/accum 0)
-       (frp/stepper 0)))
+       (frp/accum 0)))
 
-(def cursor-x
-  (get-cursor right left))
+(def get-cursor-behavior
+  (partial frp/stepper 0))
 
-(def cursor-y
-  (get-cursor down up))
+(def x-event
+  (get-cursor-event right left))
+
+(def y-event
+  (get-cursor-event down up))
+
+(def x-behavior
+  (get-cursor-behavior x-event))
+
+(def y-behavior
+  (get-cursor-behavior y-event))
 
 (def initial-table
   {:y-x (sorted-map)
@@ -63,7 +71,7 @@
 (def action
   (->> typing
        (frp/stepper "")
-       (frp/snapshot normal cursor-x cursor-y)
+       (frp/snapshot normal x-behavior y-behavior)
        (m/<$> (fn [[_ x y s]]
                 (comp (partial s/setval*
                                [s/FIRST
@@ -87,10 +95,10 @@
        (catch js/katex.ParseError _
          false)))
 
-(def current-node-event
+(def current-node
   (->> (frp/snapshot (core/filter valid? typing)
-                     cursor-x
-                     cursor-y)
+                     x-behavior
+                     y-behavior)
        (m/<$> (fn [[s x y]]
                 (partial s/setval* (s/keypath [x y]) s)))
        (m/<> (m/<$> (comp constantly
@@ -99,16 +107,17 @@
                           :node
                           ffirst)
                     content))
-       (frp/accum {})))
-
-(def current-node-behavior
-  (frp/stepper {} current-node-event))
+       (frp/accum {})
+       (frp/stepper {})))
 
 (def text
-  (->> (frp/snapshot current-node-event cursor-x cursor-y)
-       (m/<$> (fn [[m x y]]
-                (get m [x y] "")))
-       (m/<> typing)
+  (->> typing
+       (m/<> (m/<$> (fn [[x y m]]
+                      (get m [x y] ""))
+                    (frp/snapshot x-event y-behavior current-node))
+             (m/<$> (fn [[y x m]]
+                      (get m [x y] ""))
+                    (frp/snapshot y-event x-behavior current-node)))
        (frp/stepper "")))
 
 (def font-size
@@ -201,7 +210,7 @@
    [editor mode* text*]])
 
 (def app
-  ((aid/lift-a app-component) cursor-x cursor-y mode current-node-behavior text))
+  ((aid/lift-a app-component) x-behavior y-behavior mode current-node text))
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
