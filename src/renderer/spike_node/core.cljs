@@ -80,25 +80,36 @@
   ;TODO implement undo and redo
   (frp/accum initial-content (m/<> action undo redo)))
 
-(def current-node
-  (->> (m/<> (m/<$> (fn [[s x y]]
-                      (partial s/setval* (s/keypath [x y]) s))
-                    (frp/snapshot typing cursor-x cursor-y))
-             (m/<$> (comp constantly
+(defn valid?
+  [s]
+  (try (do (js/katex.renderToString s)
+           true)
+       (catch js/katex.ParseError _
+         false)))
+
+(def current-node-event
+  (->> (frp/snapshot (core/filter valid? typing)
+                     cursor-x
+                     cursor-y)
+       (m/<$> (fn [[s x y]]
+                (partial s/setval* (s/keypath [x y]) s)))
+       (m/<> (m/<$> (comp constantly
                           (partial s/transform* s/MAP-VALS :text)
                           :x-y
                           :node
                           ffirst)
                     content))
-       (frp/accum {})
-       (frp/stepper {})))
+       (frp/accum {})))
+
+(def current-node-behavior
+  (frp/stepper {} current-node-event))
 
 (def text
-  ((aid/lift-a (fn [x y m]
-                 (get m [x y] "")))
-    cursor-x
-    cursor-y
-    current-node))
+  (->> (frp/snapshot current-node-event cursor-x cursor-y)
+       (m/<$> (fn [[m x y]]
+                (get m [x y] "")))
+       (m/<> typing)
+       (frp/stepper "")))
 
 (def font-size
   18)
@@ -190,7 +201,7 @@
    [editor mode* text*]])
 
 (def app
-  ((aid/lift-a app-component) cursor-x cursor-y mode current-node text))
+  ((aid/lift-a app-component) cursor-x cursor-y mode current-node-behavior text))
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
