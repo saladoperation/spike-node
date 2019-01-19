@@ -27,6 +27,7 @@
           keydown
           insert-typing
           command-typing
+          submission
           undo
           redo)
 
@@ -301,7 +302,8 @@
                                        "block")
                    :height           font-size}}
      (case error*
-       "" [:form [command-component command-text*]]
+       "" [:form {:on-submit #(submission command-text*)}
+           [command-component command-text*]]
        error*)]]])
 
 (def app
