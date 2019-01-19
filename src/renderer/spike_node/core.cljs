@@ -205,7 +205,8 @@
              (->> current-node*
                   (mapv (fn [[position text**]]
                           [math-node position text**])))
-             [:svg {:style {:height "80%"}}
+             [:svg {:style {:height "80%"
+                            :width  "100%"}}
               [:rect {:height size
                       :stroke "white"
                       :width  size
