@@ -316,9 +316,7 @@
                       :width  cursor-size
                       :x      (* cursor-x* cursor-size)
                       :y      (* cursor-y* cursor-size)}]])
-   [:div {:style {:display        "flex"
-                  :flex-direction "column"
-                  :width          "50%"}}
+   [:div {:style {:width "50%"}}
     [editor mode* insert-text*]
     [:div {:style {:background-color background-color
                    :display          (if (and (not= mode* :command)
