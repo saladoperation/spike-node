@@ -15,7 +15,7 @@
 (def new
   (keyword (nano-id)))
 
-(frp/defe file-event down up left right insert keydown typing undo redo)
+(frp/defe file-event down up left right insert command keydown typing undo redo)
 
 (def file-behavior
   (->> file-event
@@ -173,10 +173,9 @@
   (* font-size 3))
 
 (def mode
-  (->> insert
-       (aid/<$ :insert)
-       (m/<> (aid/<$ :normal normal))
-       (frp/stepper :normal)))
+  (frp/stepper :normal (m/<> (aid/<$ :normal normal)
+                             (aid/<$ :insert insert)
+                             (aid/<$ :command command))))
 
 (defn editor
   [mode* text*]
@@ -288,7 +287,8 @@
   (partial run! (partial apply bind)))
 
 (def keymap
-  {"h"     left
+  {":"     command
+   "h"     left
    "i"     insert
    "j"     down
    "k"     up
