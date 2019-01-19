@@ -237,9 +237,12 @@
                    :y (* y cursor-size)}
    [math (align s)]])
 
+(def background-color
+  "black")
+
 (defn app-component
   [cursor-x* cursor-y* mode* current-node* text* error*]
-  [:div {:style {:background-color "black"
+  [:div {:style {:background-color background-color
                  :color            "white"
                  :height           "100%"
                  :width            "100%"}}
@@ -254,10 +257,14 @@
                       :width  cursor-size
                       :x      (* cursor-x* cursor-size)
                       :y      (* cursor-y* cursor-size)}]])
-   [:div {:style {:height   "5%"
-                  :position "absolute"
-                  :top      "75%"
-                  :width    "100%"}}
+   [:div {:style {:background-color background-color
+                  :display          (case error*
+                                      "" "none"
+                                      "block")
+                  :height           "5%"
+                  :position         "absolute"
+                  :top              "75%"
+                  :width            "100%"}}
     [:div {:style {:bottom   0
                    :position "absolute"}}
      error*]]
