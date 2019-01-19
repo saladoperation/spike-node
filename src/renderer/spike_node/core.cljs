@@ -217,7 +217,7 @@
                                (swap! state
                                       (partial s/setval* :editor (.-editor %))))
            :style           {:font-size font-size
-                             :height    "20%"
+                             :height    "100%"
                              :width     "100%"}
            :theme           "terminal"}])})))
 
@@ -244,31 +244,30 @@
   [cursor-x* cursor-y* mode* current-node* text* error*]
   [:div {:style {:background-color background-color
                  :color            "white"
+                 :display          "flex"
                  :height           "100%"
+                 :overflow         "hidden"
                  :width            "100%"}}
    (s/setval s/END
              (->> current-node*
                   (mapv (fn [[position text**]]
                           [math-node position text**])))
-             [:svg {:style {:height "80%"
-                            :width  "100%"}}
+             [:svg {:style {:width "50%"}}
               [:rect {:height cursor-size
                       :stroke "red"
                       :width  cursor-size
                       :x      (* cursor-x* cursor-size)
                       :y      (* cursor-y* cursor-size)}]])
-   [:div {:style {:background-color background-color
-                  :display          (case error*
-                                      "" "none"
-                                      "block")
-                  :height           "5%"
-                  :position         "absolute"
-                  :top              "75%"
-                  :width            "100%"}}
-    [:div {:style {:bottom   0
-                   :position "absolute"}}
-     error*]]
-   [editor mode* text*]])
+   [:div {:style {:display        "flex"
+                  :flex-direction "column"
+                  :width          "50%"}}
+    [editor mode* text*]
+    [:div {:style {:background-color background-color
+                   :display          (case error*
+                                       "" "none"
+                                       "block")
+                   :height           font-size}}
+     error*]]])
 
 (def app
   ((aid/lift-a app-component)
