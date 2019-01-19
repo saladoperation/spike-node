@@ -21,7 +21,7 @@
           up
           left
           right
-          escape
+          normal-escape
           insert
           command
           editor-keydown
@@ -73,6 +73,9 @@
 (def escape?
   (partial = "Escape"))
 
+(def command-escape
+  (core/filter escape? command-keydown))
+
 (def normal
   (->> insert
        (m/<$> vector)
@@ -84,7 +87,7 @@
                                (comp escape?
                                      last
                                      last)))
-       (m/<> escape (core/filter escape? command-keydown))))
+       (m/<> normal-escape command-escape)))
 
 (def undo-size
   10)
@@ -186,7 +189,10 @@
   (m/<$> get-error insert-text))
 
 (def command-text
-  (frp/stepper "" command-typing))
+  (->> command-escape
+       (aid/<$ "")
+       (m/<> command-typing)
+       (frp/stepper "")))
 
 (def font-size
   18)
@@ -334,7 +340,7 @@
 
 (def keymap
   {":"      command
-   "escape" escape
+   "escape" normal-escape
    "h"      left
    "i"      insert
    "j"      down
