@@ -88,12 +88,16 @@
   ;TODO implement undo and redo
   (frp/accum initial-content (m/<> action undo redo)))
 
-(defn valid?
+(defn get-error
   [s]
   (try (do (js/katex.renderToString s)
-           true)
-       (catch js/katex.ParseError _
-         false)))
+           "")
+       (catch js/katex.ParseError error
+         (str error))))
+
+(def valid?
+  (comp empty?
+        get-error))
 
 (def current-node
   (->> (frp/snapshot (core/filter valid? typing)
@@ -207,6 +211,13 @@
                       :width  size
                       :x      (* cursor-x* size)
                       :y      (* cursor-y* size)}]])
+   [:div {:style {:top      "75%"
+                  :height   "5%"
+                  :position "absolute"
+                  :width    "100%"}}
+    [:div {:style {:bottom   0
+                   :position "absolute"}}
+     (get-error text*)]]
    [editor mode* text*]])
 
 (def app
