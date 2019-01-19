@@ -24,7 +24,8 @@
           insert
           command
           keydown
-          typing
+          insert-typing
+          command-typing
           undo
           redo)
 
@@ -94,7 +95,7 @@
         get-error))
 
 (def valid
-  (core/filter valid? typing))
+  (core/filter valid? insert-typing))
 
 (def typed
   (->> (m/<> x-event y-event)
@@ -165,8 +166,8 @@
        (frp/accum {})
        (frp/stepper {})))
 
-(def text
-  (->> typing
+(def insert-text
+  (->> insert-typing
        (m/<> (m/<$> (fn [[x y m]]
                       (get m [x y] ""))
                     (frp/snapshot x-event y-behavior current-node))
@@ -176,7 +177,10 @@
        (frp/stepper "")))
 
 (def error
-  (m/<$> get-error text))
+  (m/<$> get-error insert-text))
+
+(def command-text
+  (frp/stepper "" command-typing))
 
 (def font-size
   18)
@@ -220,7 +224,7 @@
            :keyboardHandler "vim"
            :mode            "latex"
            :value           text*
-           :onChange        #(typing %)
+           :onChange        #(insert-typing %)
            :onFocus         #(insert
                                (.keyBinding.getStatusText (:editor @state)
                                                           (:editor @state)))
@@ -251,8 +255,24 @@
 (def background-color
   "black")
 
+(defn command-component
+  [s]
+  (r/create-class
+    {:component-did-update (fn [this]
+                             (.focus (r/dom-node this)))
+     :reagent-render       (fn [s]
+                             [:input
+                              {:on-change #(-> %
+                                               .-target.value
+                                               command-typing)
+                               :style     {:background-color background-color
+                                           :border           "none"
+                                           :color            "white"
+                                           :width            "100%"}
+                               :value     s}])}))
+
 (defn app-component
-  [cursor-x* cursor-y* mode* current-node* text* error*]
+  [cursor-x* cursor-y* mode* current-node* insert-text* command-text* error*]
   [:div {:style {:background-color background-color
                  :color            "white"
                  :display          "flex"
@@ -272,7 +292,7 @@
    [:div {:style {:display        "flex"
                   :flex-direction "column"
                   :width          "50%"}}
-    [editor mode* text*]
+    [editor mode* insert-text*]
     [:div {:style {:background-color background-color
                    :display          (if (and (not= mode* :command)
                                               (empty? error*))
@@ -280,7 +300,8 @@
                                        "block")
                    :height           font-size}}
      (case error*
-       "" ":"
+       "" [:div {:style {:display "flex"}}
+           [command-component command-text*]]
        error*)]]])
 
 (def app
@@ -289,7 +310,8 @@
     y-behavior
     mode
     current-node
-    text
+    insert-text
+    command-text
     error))
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
