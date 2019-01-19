@@ -244,4 +244,6 @@
 
 (js/Mousetrap.bind "i" #(insert))
 
+(js/Mousetrap.bind "space" #(insert))
+
 (frp/activate)
