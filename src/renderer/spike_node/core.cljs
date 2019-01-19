@@ -256,11 +256,11 @@
   (partial run! (partial apply bind)))
 
 (def keymap
-  {"j"     down
-   "k"     up
-   "h"     left
-   "l"     right
+  {"h"     left
    "i"     insert
+   "j"     down
+   "k"     up
+   "l"     right
    "space" insert
    "u"     undo})
 
