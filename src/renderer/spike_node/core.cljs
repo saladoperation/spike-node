@@ -71,8 +71,22 @@
 (def undo-size
   10)
 
+(defn get-error
+  [s]
+  (try (do (js/katex.renderToString s)
+           "")
+       (catch js/katex.ParseError error
+         (str error))))
+
+(def valid?
+  (comp empty?
+        get-error))
+
+(def valid
+  (core/filter valid? typing))
+
 (def action
-  (->> typing
+  (->> valid
        (frp/stepper "")
        (frp/snapshot normal x-behavior y-behavior)
        (m/<$>
@@ -116,19 +130,8 @@
                                                 lfirst))
                            redo))))
 
-(defn get-error
-  [s]
-  (try (do (js/katex.renderToString s)
-           "")
-       (catch js/katex.ParseError error
-         (str error))))
-
-(def valid?
-  (comp empty?
-        get-error))
-
 (def current-node
-  (->> (frp/snapshot (core/filter valid? typing)
+  (->> (frp/snapshot valid
                      x-behavior
                      y-behavior)
        (m/<$> (fn [[s x y]]
