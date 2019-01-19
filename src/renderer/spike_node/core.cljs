@@ -95,8 +95,11 @@
   (comp (partial < 1)
         count))
 
+(def lfirst
+  (comp first
+        last))
+
 (def content
-  ;TODO implement undo and redo
   (frp/accum initial-content
              (m/<> action
                    (aid/<$ (aid/if-then (comp multiton?
@@ -108,7 +111,10 @@
                                                               s/BEFORE-ELEM]
                                                              ffirst)))
                            undo)
-                   redo)))
+                   (aid/<$ (comp (partial s/transform* s/LAST rest)
+                                 (aid/transfer* [s/FIRST s/BEFORE-ELEM]
+                                                lfirst))
+                           redo))))
 
 (defn get-error
   [s]
@@ -261,6 +267,7 @@
    "j"     down
    "k"     up
    "l"     right
+   "r"     redo
    "space" insert
    "u"     undo})
 
