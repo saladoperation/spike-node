@@ -86,9 +86,10 @@
   (core/filter valid? typing))
 
 (def typed
-  (frp/stepper false
-               (m/<> (aid/<$ false (m/<> x-event y-event))
-                     (aid/<$ true valid))))
+  (->> (m/<> x-event y-event)
+       (aid/<$ false)
+       (m/<> (aid/<$ true valid))
+       (frp/stepper false)))
 
 (def action
   (->> valid
