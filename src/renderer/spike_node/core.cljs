@@ -290,8 +290,9 @@
   [s]
   (r/create-class
     {:component-did-update
-     (fn [this]
-       (.focus (r/dom-node this)))
+     #(-> %
+          r/dom-node
+          .focus)
      :reagent-render
      (fn [s]
        [:input
