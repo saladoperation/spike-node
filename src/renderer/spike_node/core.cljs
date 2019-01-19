@@ -273,6 +273,9 @@
 (def background-color
   "black")
 
+(def maximum-z-index
+  2147483647)
+
 (defn command-component
   [s]
   (r/create-class
@@ -288,8 +291,11 @@
                                                  command-keydown)
                                :style       {:background-color background-color
                                              :border           "none"
+                                             :bottom           0
                                              :color            "white"
-                                             :width            "100%"}
+                                             :position         "absolute"
+                                             :width            "50%"
+                                             :z-index          maximum-z-index}
                                :value       s}])}))
 
 (defn app-component
