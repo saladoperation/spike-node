@@ -320,9 +320,9 @@
                  :overflow         "hidden"
                  :width            "100%"}}
    (s/setval s/END
-             (->> current-node*
-                  (mapv (fn [[position text**]]
-                          [math-node position text**])))
+             (mapv (comp vec
+                         (partial cons math-node))
+                   current-node*)
              [:svg {:style {:width (get-percent left-pane)}}
               [:rect {:height cursor-size
                       :stroke "red"
