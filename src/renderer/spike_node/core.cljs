@@ -56,13 +56,16 @@
    []])
 
 (def normal
-  (core/filter (aid/build and
-                          (comp (partial = "")
-                                ffirst)
-                          (comp (partial = "Escape")
-                                last
-                                last))
-               (core/partition 2 1 keydown)))
+  (->> insert
+       (m/<$> vector)
+       (m/<> keydown)
+       (core/partition 2 1)
+       (core/filter (aid/build and
+                               (comp (partial = "")
+                                     ffirst)
+                               (comp (partial = "Escape")
+                                     last
+                                     last)))))
 
 (def undo-size
   10)
@@ -204,7 +207,9 @@
            :mode            "latex"
            :value           text*
            :onChange        #(typing %)
-           :onFocus         #(insert)
+           :onFocus         #(insert
+                               (.keyBinding.getStatusText (:editor @state)
+                                                          (:editor @state)))
            :ref             #(if %
                                (swap! state
                                       (partial s/setval* :editor (.-editor %))))
