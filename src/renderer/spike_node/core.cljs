@@ -24,7 +24,8 @@
           escape
           insert
           command
-          keydown
+          editor-keydown
+          command-keydown
           insert-typing
           command-typing
           submission
@@ -69,18 +70,21 @@
      :edge (graph/digraph)}]
    []])
 
+(def escape?
+  (partial = "Escape"))
+
 (def normal
   (->> insert
        (m/<$> vector)
-       (m/<> keydown)
+       (m/<> editor-keydown)
        (core/partition 2 1)
        (core/filter (aid/build and
                                (comp (partial = "")
                                      ffirst)
-                               (comp (partial = "Escape")
+                               (comp escape?
                                      last
                                      last)))
-       (m/<> escape)))
+       (m/<> escape (core/filter escape? command-keydown))))
 
 (def undo-size
   10)
@@ -207,9 +211,9 @@
            .textInput.getElement
            (.addEventListener
              "keydown"
-             #(keydown [(.keyBinding.getStatusText (:editor @state)
-                                                   (:editor @state))
-                        (.-key %)]))))
+             #(editor-keydown [(.keyBinding.getStatusText (:editor @state)
+                                                          (:editor @state))
+                               (.-key %)]))))
        :component-did-update
        (fn [_]
          (if (-> @state
@@ -264,14 +268,17 @@
                              (.focus (r/dom-node this)))
      :reagent-render       (fn [s]
                              [:input
-                              {:on-change #(-> %
-                                               .-target.value
-                                               command-typing)
-                               :style     {:background-color background-color
-                                           :border           "none"
-                                           :color            "white"
-                                           :width            "100%"}
-                               :value     s}])}))
+                              {:on-change   #(-> %
+                                                 .-target.value
+                                                 command-typing)
+                               :on-key-down #(-> %
+                                                 .-key
+                                                 command-keydown)
+                               :style       {:background-color background-color
+                                             :border           "none"
+                                             :color            "white"
+                                             :width            "100%"}
+                               :value       s}])}))
 
 (defn app-component
   [cursor-x* cursor-y* mode* current-node* insert-text* command-text* error*]
