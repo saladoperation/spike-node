@@ -276,27 +276,39 @@
 (def maximum-z-index
   2147483647)
 
+(def get-percent
+  (comp (partial (aid/flip str) "%")
+        (partial * 100)))
+
+(def left-pane
+  0.5)
+
+(def right-pane
+  (- 1 left-pane))
+
 (defn command-component
   [s]
   (r/create-class
-    {:component-did-update (fn [this]
-                             (.focus (r/dom-node this)))
-     :reagent-render       (fn [s]
-                             [:input
-                              {:on-change   #(-> %
-                                                 .-target.value
-                                                 command-typing)
-                               :on-key-down #(-> %
-                                                 .-key
-                                                 command-keydown)
-                               :style       {:background-color background-color
-                                             :border           "none"
-                                             :bottom           0
-                                             :color            "white"
-                                             :position         "absolute"
-                                             :width            "50%"
-                                             :z-index          maximum-z-index}
-                               :value       s}])}))
+    {:component-did-update
+     (fn [this]
+       (.focus (r/dom-node this)))
+     :reagent-render
+     (fn [s]
+       [:input
+        {:on-change   #(-> %
+                           .-target.value
+                           command-typing)
+         :on-key-down #(-> %
+                           .-key
+                           command-keydown)
+         :style       {:background-color background-color
+                       :border           "none"
+                       :bottom           0
+                       :color            "white"
+                       :position         "absolute"
+                       :width            (get-percent right-pane)
+                       :z-index          maximum-z-index}
+         :value       s}])}))
 
 (defn app-component
   [cursor-x* cursor-y* mode* current-node* insert-text* command-text* error*]
@@ -310,13 +322,13 @@
              (->> current-node*
                   (mapv (fn [[position text**]]
                           [math-node position text**])))
-             [:svg {:style {:width "50%"}}
+             [:svg {:style {:width (get-percent left-pane)}}
               [:rect {:height cursor-size
                       :stroke "red"
                       :width  cursor-size
                       :x      (* cursor-x* cursor-size)
                       :y      (* cursor-y* cursor-size)}]])
-   [:div {:style {:width "50%"}}
+   [:div {:style {:width (get-percent right-pane)}}
     [editor mode* insert-text*]
     [:div {:style {:background-color background-color
                    :display          (if (and (not= mode* :command)
