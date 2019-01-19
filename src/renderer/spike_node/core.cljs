@@ -28,6 +28,7 @@
                                   dec)
                      minus)
              (aid/<$ inc plus))
+       ;TODO extract a function
        (frp/accum 0)
        (frp/stepper 0)))
 
