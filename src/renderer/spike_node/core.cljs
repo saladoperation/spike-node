@@ -79,6 +79,10 @@
 (def command-exit
   (m/<> command-escape submission))
 
+(def llast
+  (comp last
+        last))
+
 (def normal
   (->> insert
        (m/<$> vector)
@@ -88,8 +92,7 @@
                                (comp (partial = "")
                                      ffirst)
                                (comp escape?
-                                     last
-                                     last)))
+                                     llast)))
        (m/<> normal-escape command-exit)))
 
 (def undo-size
