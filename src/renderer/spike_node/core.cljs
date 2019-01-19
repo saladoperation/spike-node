@@ -68,21 +68,28 @@
                                      last
                                      first)))))
 
+(def undo-size
+  10)
+
 (def action
   (->> typing
        (frp/stepper "")
        (frp/snapshot normal x-behavior y-behavior)
-       (m/<$> (fn [[_ x y s]]
-                (aid/transfer* [s/FIRST s/BEFORE-ELEM]
-                               (comp (partial s/setval*
-                                              [:node
-                                               (s/multi-path [:y-x
-                                                              (s/keypath [y x])]
-                                                             [:x-y
-                                                              (s/keypath [x y])])
-                                               :text]
-                                              s)
-                                     ffirst))))))
+       (m/<$>
+         (fn [[_ x y s]]
+           (comp (partial s/transform* s/FIRST (partial take undo-size))
+                 (aid/transfer* [s/FIRST s/BEFORE-ELEM]
+                                (comp (partial s/setval*
+                                               [:node
+                                                (s/multi-path [:y-x
+                                                               (s/keypath [y
+                                                                           x])]
+                                                              [:x-y
+                                                               (s/keypath [x
+                                                                           y])])
+                                                :text]
+                                               s)
+                                      ffirst)))))))
 
 (def content
   ;TODO implement undo and redo
@@ -127,7 +134,7 @@
 (def font-size
   18)
 
-(def size
+(def cursor-size
   (* font-size 3))
 
 (def mode
@@ -191,8 +198,8 @@
 
 (defn math-node
   [[x y] s]
-  [:foreignObject {:x (* x size)
-                   :y (* y size)}
+  [:foreignObject {:x (* x cursor-size)
+                   :y (* y cursor-size)}
    [math (align s)]])
 
 (defn app-component
@@ -207,11 +214,11 @@
                           [math-node position text**])))
              [:svg {:style {:height "80%"
                             :width  "100%"}}
-              [:rect {:height size
+              [:rect {:height cursor-size
                       :stroke "white"
-                      :width  size
-                      :x      (* cursor-x* size)
-                      :y      (* cursor-y* size)}]])
+                      :width  cursor-size
+                      :x      (* cursor-x* cursor-size)
+                      :y      (* cursor-y* cursor-size)}]])
    [:div {:style {:top      "75%"
                   :height   "5%"
                   :position "absolute"
