@@ -73,15 +73,15 @@
        (frp/stepper "")
        (frp/snapshot normal x-behavior y-behavior)
        (m/<$> (fn [[_ x y s]]
-                (comp (partial s/setval*
-                               [s/FIRST
-                                s/FIRST
-                                :node
-                                (s/multi-path [:y-x (s/keypath [y x])]
-                                              [:x-y (s/keypath [x y])])
-                                :text]
-                               s)
-                      (aid/transfer* [s/FIRST s/BEFORE-ELEM]
+                (aid/transfer* [s/FIRST s/BEFORE-ELEM]
+                               (comp (partial s/setval*
+                                              [:node
+                                               (s/multi-path [:y-x
+                                                              (s/keypath [y x])]
+                                                             [:x-y
+                                                              (s/keypath [x y])])
+                                               :text]
+                                              s)
                                      ffirst))))))
 
 (def content
