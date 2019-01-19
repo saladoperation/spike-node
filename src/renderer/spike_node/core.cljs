@@ -161,14 +161,14 @@
     {:__html (js/katex.renderToString s
                                       #js {:displayMode true})}}])
 
+(def align
+  (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
+
 (defn math-node
   [[x y] s]
   [:foreignObject {:x (* x size)
                    :y (* y size)}
-   [math s]])
-
-(def align
-  (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
+   [math (align s)]])
 
 (defn app-component
   [cursor-x* cursor-y* mode* current-node* text*]
