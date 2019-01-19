@@ -163,6 +163,9 @@
                     (frp/snapshot y-event x-behavior current-node)))
        (frp/stepper "")))
 
+(def error
+  (m/<$> get-error text))
+
 (def font-size
   18)
 
@@ -235,7 +238,7 @@
    [math (align s)]])
 
 (defn app-component
-  [cursor-x* cursor-y* mode* current-node* text*]
+  [cursor-x* cursor-y* mode* current-node* text* error*]
   [:div {:style {:background-color "black"
                  :color            "white"
                  :height           "100%"
@@ -257,11 +260,17 @@
                   :width    "100%"}}
     [:div {:style {:bottom   0
                    :position "absolute"}}
-     (get-error text*)]]
+     error*]]
    [editor mode* text*]])
 
 (def app
-  ((aid/lift-a app-component) x-behavior y-behavior mode current-node text))
+  ((aid/lift-a app-component)
+    x-behavior
+    y-behavior
+    mode
+    current-node
+    text
+    error))
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
