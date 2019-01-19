@@ -247,7 +247,7 @@
              [:svg {:style {:height "80%"
                             :width  "100%"}}
               [:rect {:height cursor-size
-                      :stroke "white"
+                      :stroke "red"
                       :width  cursor-size
                       :x      (* cursor-x* cursor-size)
                       :y      (* cursor-y* cursor-size)}]])
