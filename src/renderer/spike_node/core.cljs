@@ -254,9 +254,9 @@
                       :width  cursor-size
                       :x      (* cursor-x* cursor-size)
                       :y      (* cursor-y* cursor-size)}]])
-   [:div {:style {:top      "75%"
-                  :height   "5%"
+   [:div {:style {:height   "5%"
                   :position "absolute"
+                  :top      "75%"
                   :width    "100%"}}
     [:div {:style {:bottom   0
                    :position "absolute"}}
