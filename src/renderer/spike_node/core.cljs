@@ -15,7 +15,18 @@
 (def new
   (keyword (nano-id)))
 
-(frp/defe file-event down up left right insert command keydown typing undo redo)
+(frp/defe file-event
+          down
+          up
+          left
+          right
+          escape
+          insert
+          command
+          keydown
+          typing
+          undo
+          redo)
 
 (def file-behavior
   (->> file-event
@@ -65,7 +76,8 @@
                                      ffirst)
                                (comp (partial = "Escape")
                                      last
-                                     last)))))
+                                     last)))
+       (m/<> escape)))
 
 (def undo-size
   10)
@@ -287,15 +299,16 @@
   (partial run! (partial apply bind)))
 
 (def keymap
-  {":"     command
-   "h"     left
-   "i"     insert
-   "j"     down
-   "k"     up
-   "l"     right
-   "r"     redo
-   "space" insert
-   "u"     undo})
+  {":"      command
+   "escape" escape
+   "h"      left
+   "i"      insert
+   "j"      down
+   "k"      up
+   "l"      right
+   "r"      redo
+   "space"  insert
+   "u"      undo})
 
 (bind-keymap keymap)
 
