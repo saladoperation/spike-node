@@ -233,17 +233,21 @@
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
-;TODO extract a macro
-(js/Mousetrap.bind "j" #(down))
+(defn bind
+  [s e]
+  (js/Mousetrap.bind s #(e)))
 
-(js/Mousetrap.bind "k" #(up))
+(def bind-keymap
+  (partial run! (partial apply bind)))
 
-(js/Mousetrap.bind "h" #(left))
+(def keymap
+  {"j"     down
+   "k"     up
+   "h"     left
+   "l"     right
+   "i"     insert
+   "space" insert})
 
-(js/Mousetrap.bind "l" #(right))
-
-(js/Mousetrap.bind "i" #(insert))
-
-(js/Mousetrap.bind "space" #(insert))
+(bind-keymap keymap)
 
 (frp/activate)
