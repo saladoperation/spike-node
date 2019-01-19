@@ -214,6 +214,7 @@
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
+;TODO extract a macro
 (js/Mousetrap.bind "j" #(down))
 
 (js/Mousetrap.bind "k" #(up))
