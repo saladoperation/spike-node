@@ -85,25 +85,33 @@
 (def valid
   (core/filter valid? typing))
 
+(def typed
+  (frp/stepper false
+               (m/<> (aid/<$ false (m/<> x-event y-event))
+                     (aid/<$ true valid))))
+
 (def action
   (->> valid
        (frp/stepper "")
-       (frp/snapshot normal x-behavior y-behavior)
+       (frp/snapshot normal x-behavior y-behavior typed)
        (m/<$>
-         (fn [[_ x y s]]
-           (comp (partial s/transform* s/FIRST (partial take undo-size))
-                 (aid/transfer* [s/FIRST s/BEFORE-ELEM]
-                                (comp (partial s/setval*
-                                               [:node
-                                                (s/multi-path [:y-x
-                                                               (s/keypath [y
-                                                                           x])]
-                                                              [:x-y
-                                                               (s/keypath [x
-                                                                           y])])
-                                                :text]
-                                               s)
-                                      ffirst)))))))
+         (fn [[_ x y typed* s]]
+           (if typed*
+             (comp
+               (partial s/transform* s/FIRST (partial take undo-size))
+               (aid/transfer* [s/FIRST s/BEFORE-ELEM]
+                              (comp (partial s/setval*
+                                             [:node
+                                              (s/multi-path [:y-x
+                                                             (s/keypath [y
+                                                                         x])]
+                                                            [:x-y
+                                                             (s/keypath [x
+                                                                         y])])
+                                              :text]
+                                             s)
+                                    ffirst)))
+             identity)))))
 
 (def multiton?
   (comp (partial < 1)
