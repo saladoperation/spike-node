@@ -238,21 +238,21 @@
        (fn [mode* text*]
          (swap! state (partial s/setval* :mode mode*))
          [:> ace-editor
-          {:focus           (= :insert mode*)
-           :keyboardHandler "vim"
-           :mode            "latex"
-           :value           text*
-           :onChange        #(insert-typing %)
-           :onFocus         #(insert
-                               (.keyBinding.getStatusText (:editor @state)
-                                                          (:editor @state)))
-           :ref             #(if %
-                               (swap! state
-                                      (partial s/setval* :editor (.-editor %))))
-           :style           {:font-size font-size
-                             :height    "100%"
-                             :width     "100%"}
-           :theme           "terminal"}])})))
+          {:focus            (= :insert mode*)
+           :keyboard-handler "vim"
+           :mode             "latex"
+           :value            text*
+           :on-change        #(insert-typing %)
+           :on-focus         #(insert
+                                (.keyBinding.getStatusText (:editor @state)
+                                                           (:editor @state)))
+           :ref              #(if %
+                                (swap! state
+                                       (partial s/setval* :editor (.-editor %))))
+           :style            {:font-size font-size
+                              :height    "100%"
+                              :width     "100%"}
+           :theme            "terminal"}])})))
 
 (defn math
   [s]
