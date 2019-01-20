@@ -306,6 +306,15 @@
 (def right-pane
   (- 1 left-pane))
 
+(def message-style
+  {:background-color background-color
+   :border           "none"
+   :bottom           0
+   :color            "white"
+   :position         "absolute"
+   :width            (get-percent right-pane)
+   :z-index          maximum-z-index})
+
 (defn command-component
   [s]
   (r/create-class
@@ -322,13 +331,7 @@
          :on-key-down #(-> %
                            .-key
                            command-keydown)
-         :style       {:background-color background-color
-                       :border           "none"
-                       :bottom           0
-                       :color            "white"
-                       :position         "absolute"
-                       :width            (get-percent right-pane)
-                       :z-index          maximum-z-index}
+         :style       message-style
          :value       s}])}))
 
 (defn app-component
@@ -360,7 +363,8 @@
      (case error*
        "" [:form {:on-submit #(submission command-text*)}
            [command-component command-text*]]
-       error*)]]])
+       [:div {:style message-style}
+        error*])]]])
 
 (def app
   ((aid/lift-a app-component)
