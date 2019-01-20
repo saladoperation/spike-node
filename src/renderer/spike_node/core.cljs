@@ -241,7 +241,6 @@
           {:focus            (= :insert mode*)
            :keyboard-handler "vim"
            :mode             "latex"
-           :value            text*
            :on-change        #(insert-typing %)
            :on-focus         #(insert
                                 (.keyBinding.getStatusText (:editor @state)
@@ -254,7 +253,8 @@
            :style            {:font-size font-size
                               :height    "100%"
                               :width     "100%"}
-           :theme            "terminal"}])})))
+           :theme            "terminal"
+           :value            text*}])})))
 
 (defn math
   [s]
