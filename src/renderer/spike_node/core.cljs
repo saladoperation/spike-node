@@ -225,7 +225,17 @@
              "keydown"
              #(editor-keydown [(.keyBinding.getStatusText (:editor @state)
                                                           (:editor @state))
-                               (.-key %)]))))
+                               (.-key %)])))
+         (-> @state
+             :editor
+             .textInput.getElement
+             (.addEventListener "keyup"
+                                #(swap! state
+                                        (partial s/setval*
+                                                 :backtick
+                                                 (-> %
+                                                     .-key
+                                                     (= "`")))))))
        :component-did-update
        (fn [_]
          (if (-> @state
@@ -238,7 +248,15 @@
        (fn [mode* text*]
          (swap! state (partial s/setval* :mode mode*))
          [:> ace-editor
-          {:focus            (= :insert mode*)
+          {:commands         [{:name    "`"
+                               :bindKey "`"
+                               :exec    aid/nop}
+                              {:bindKey "l"
+                               :exec    #(.insert (:editor @state)
+                                                  (aid/casep @state
+                                                    :backtick "\\lambda"
+                                                    "l"))}]
+           :focus            (= :insert mode*)
            :keyboard-handler "vim"
            :mode             "latex"
            :on-change        #(insert-typing %)
