@@ -387,13 +387,13 @@
 
 (def keymap
   {":"      command
+   "ctrl+r" redo
    "escape" normal-escape
    "h"      left
    "i"      insert
    "j"      down
    "k"      up
    "l"      right
-   "r"      redo
    "space"  insert
    "u"      undo})
 
