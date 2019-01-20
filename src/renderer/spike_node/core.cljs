@@ -248,7 +248,9 @@
                                                            (:editor @state)))
            :ref              #(if %
                                 (swap! state
-                                       (partial s/setval* :editor (.-editor %))))
+                                       (partial s/setval*
+                                                :editor
+                                                (.-editor %))))
            :style            {:font-size font-size
                               :height    "100%"
                               :width     "100%"}
