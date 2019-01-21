@@ -37,13 +37,6 @@
 (def path
   (js/require "path"))
 
-(def open
-  (->> submission
-       (m/<$> (partial (aid/flip str/split) #" "))
-       (core/filter (comp (partial = ":e")
-                          first))
-       (m/<$> last)))
-
 (def path-event
   (m/<$> fs/dirname file))
 
@@ -52,6 +45,13 @@
 
 (def path-behavior
   (frp/stepper default-path path-event))
+
+(def filename
+  (->> submission
+       (m/<$> (partial (aid/flip str/split) #" "))
+       (core/filter (comp (partial = ":e")
+                          first))
+       (m/<$> last)))
 
 (defn get-cursor-event
   [plus minus]
