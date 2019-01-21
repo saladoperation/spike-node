@@ -16,7 +16,7 @@
             [reagent.core :as r]
             [spike-node.helpers :as helpers]))
 
-(frp/defe file-path
+(frp/defe previous-file-path
           down
           up
           left
@@ -40,7 +40,7 @@
   (js/require "path"))
 
 (def directory-event
-  (m/<$> fs/dirname file-path))
+  (m/<$> fs/dirname previous-file-path))
 
 (def default-path
   (path.join (.homedir os) "Documents"))
@@ -72,7 +72,7 @@
   (comp edn?
         slurp))
 
-(def active-file
+(def current-file
   (m/<> (->> open
              (core/remove fs/fexists?)
              (m/<$> (fn [k]
@@ -85,8 +85,8 @@
                       [k (comp edn/read-string
                                slurp)])))))
 
-(def active-file-path
-  (m/<$> first active-file))
+(def current-file-path
+  (m/<$> first current-file))
 
 (defn get-cursor-event
   [plus minus]
@@ -458,6 +458,8 @@
 
 (def app-view
   ((aid/lift-a app-component) graph-view command-view editor-view error-view))
+
+(frp/run previous-file-path current-file-path)
 
 (frp/run (comp aid/funcall
                :prevent-default)
