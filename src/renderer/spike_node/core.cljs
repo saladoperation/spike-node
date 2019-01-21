@@ -468,6 +468,7 @@
 (def app-view
   ((aid/lift-a app-component) graph-view command-view editor-view error-view))
 
+;TODO don't use two events when ClojureScript supports lazy evaluation
 (frp/run previous-file-path current-file-path)
 
 (frp/run (comp aid/funcall
