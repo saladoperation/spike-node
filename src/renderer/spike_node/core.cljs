@@ -31,6 +31,12 @@
           undo
           redo)
 
+(def os
+  (js/require "os"))
+
+(def path
+  (js/require "path"))
+
 (def open
   (->> submission
        (m/<$> (partial (aid/flip str/split) #" "))
@@ -38,8 +44,14 @@
                           first))
        (m/<$> last)))
 
-(def path
+(def path-event
   (m/<$> fs/dirname file))
+
+(def default-path
+  (.join path (.homedir os) "Documents"))
+
+(def path-behavior
+  (frp/stepper default-path path-event))
 
 (defn get-cursor-event
   [plus minus]
@@ -415,7 +427,7 @@
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
 
-(.ipcRenderer.on helpers/electron helpers/channel (comp path
+(.ipcRenderer.on helpers/electron helpers/channel (comp path-event
                                                         last
                                                         vector))
 
