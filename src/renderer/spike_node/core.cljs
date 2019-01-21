@@ -86,22 +86,26 @@
                      open)))
 
 (defn get-cursor-event
-  [plus minus]
+  [plus minus move]
   (->> (m/<> (aid/<$ (aid/if-then pos?
                                   dec)
                      minus)
-             (aid/<$ inc plus))
-       ;TODO extract a function
+             (aid/<$ inc plus)
+             (m/<$> constantly move))
        (frp/accum 0)))
 
 (def get-cursor-behavior
   (partial frp/stepper 0))
 
 (def x-event
-  (get-cursor-event right left))
+  (->> loop-file
+       (m/<$> :x)
+       (get-cursor-event right left)))
 
 (def y-event
-  (get-cursor-event down up))
+  (->> loop-file
+       (m/<$> :y)
+       (get-cursor-event down up)))
 
 (def x-behavior
   (get-cursor-behavior x-event))
