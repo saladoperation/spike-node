@@ -10,11 +10,7 @@
             [frp.window :as window]
             [katex]
             [loom.graph :as graph]
-            [nano-id.core :refer [nano-id]]
             [reagent.core :as r]))
-
-(def new
-  (keyword (nano-id)))
 
 (frp/defe file-event
           down
@@ -31,11 +27,6 @@
           submission
           undo
           redo)
-
-(def file-behavior
-  (->> file-event
-       (m/<$> keyword)
-       (frp/stepper new)))
 
 (defn get-cursor-event
   [plus minus]
