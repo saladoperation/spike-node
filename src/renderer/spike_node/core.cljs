@@ -23,6 +23,7 @@
           insert
           command
           editor-keydown
+          editor-keyup
           command-keydown
           insert-typing
           command-typing
@@ -207,6 +208,15 @@
                              (aid/<$ :insert insert)
                              (aid/<$ :command command))))
 
+(def editor-command
+  (->> editor-keyup
+       (core/filter (partial = ":"))
+       (aid/<$ false)
+       (m/<> (m/<$> (comp (partial = ":")
+                          last)
+                    editor-keydown))
+       (frp/stepper false)))
+
 (defn editor
   [mode* text*]
   (let [state (atom {})]
@@ -225,13 +235,17 @@
          (-> @state
              :editor
              .textInput.getElement
-             (.addEventListener "keyup"
-                                #(swap! state
-                                        (partial s/setval*
-                                                 :backtick
-                                                 (-> %
-                                                     .-key
-                                                     (= "`")))))))
+             (.addEventListener
+               "keyup"
+               (fn [event*]
+                 (editor-keyup (.keyBinding.getStatusText (:editor @state)
+                                                          (:editor @state)))
+                 (swap! state
+                        (partial s/setval*
+                                 :backtick
+                                 (-> event*
+                                     .-key
+                                     (= "`"))))))))
        :component-did-update
        (fn [_]
          (if (-> @state
@@ -331,7 +345,14 @@
          :value       s}])}))
 
 (defn app-component
-  [cursor-x* cursor-y* mode* current-node* insert-text* command-text* error*]
+  [cursor-x*
+   cursor-y*
+   mode*
+   current-node*
+   insert-text*
+   command-text*
+   error*
+   editor-command*]
   [:div {:style {:background-color background-color
                  :color            "white"
                  :display          "flex"
@@ -356,8 +377,9 @@
      [command-component command-text*]]]
    [:div {:style {:width (get-percent right-pane)}}
     [editor mode* insert-text*]
-    [:div {:style (merge message-style {:display (aid/casep error*
-                                                   empty? "none"
+    [:div {:style (merge message-style {:display (if (or editor-command*
+                                                         (empty? error*))
+                                                   "none"
                                                    "block")})}
      error*]]])
 
@@ -369,7 +391,8 @@
     current-node
     insert-text
     command-text
-    error))
+    error
+    editor-command))
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
