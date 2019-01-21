@@ -46,7 +46,9 @@
     (if main
       {:output-to (get-resources entry)
        :target    :nodejs}
-      {:output-to  (get-path (fs/parent renderer-output-dir) entry)
+      {:output-to  (-> renderer-output-dir
+                       fs/parent
+                       (get-path entry))
        :output-dir renderer-output-dir
        :asset-path asset-path})))
 
