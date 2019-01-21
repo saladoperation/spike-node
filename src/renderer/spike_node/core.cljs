@@ -218,7 +218,7 @@
        (frp/stepper false)))
 
 (defn editor
-  [mode* text*]
+  [& _]
   (let [state (atom {})]
     (r/create-class
       {:component-did-mount
@@ -326,7 +326,7 @@
    :z-index          maximum-z-index})
 
 (defn command-component
-  [s]
+  [_]
   (r/create-class
     {:component-did-update
      #(-> %
