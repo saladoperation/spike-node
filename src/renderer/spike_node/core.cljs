@@ -338,29 +338,28 @@
                  :height           "100%"
                  :overflow         "hidden"
                  :width            "100%"}}
-   (s/setval s/END
-             (mapv (comp vec
-                         (partial cons math-node))
-                   current-node*)
-             [:svg {:style {:width (get-percent left-pane)}}
-              [:rect {:height cursor-size
-                      :stroke "red"
-                      :width  cursor-size
-                      :x      (* cursor-x* cursor-size)
-                      :y      (* cursor-y* cursor-size)}]])
+   [:div {:style {:width (get-percent left-pane)}}
+    (s/setval s/END
+              (mapv (comp vec
+                          (partial cons math-node))
+                    current-node*)
+              [:svg {:style {:width "100%"}}
+               [:rect {:height cursor-size
+                       :stroke "red"
+                       :width  cursor-size
+                       :x      (* cursor-x* cursor-size)
+                       :y      (* cursor-y* cursor-size)}]])
+    [:form {:style     {:display (case mode*
+                                   :command "block"
+                                   "none")}
+            :on-submit #(submission command-text*)}
+     [command-component command-text*]]]
    [:div {:style {:width (get-percent right-pane)}}
     [editor mode* insert-text*]
-    [:div {:style {:background-color background-color
-                   :display          (if (and (not= mode* :command)
-                                              (empty? error*))
-                                       "none"
-                                       "block")
-                   :height           font-size}}
-     (case error*
-       "" [:form {:on-submit #(submission command-text*)}
-           [command-component command-text*]]
-       [:div {:style message-style}
-        error*])]]])
+    [:div {:style (merge message-style {:display (aid/casep error*
+                                                   empty? "none"
+                                                   "block")})}
+     error*]]])
 
 (def app
   ((aid/lift-a app-component)
