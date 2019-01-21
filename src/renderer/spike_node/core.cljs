@@ -264,6 +264,20 @@
                     editor-keydown))
        (frp/stepper false)))
 
+(def file
+  (->> (frp/snapshot (->> current-file-path
+                          (core/partition 2 1)
+                          (m/<$> first))
+                     ((aid/lift-a (fn [content* x y]
+                                    {:content content*
+                                     :x       x
+                                     :y       y}))
+                       (frp/stepper initial-content content)
+                       x-behavior
+                       y-behavior))
+       (m/<$> (partial apply hash-map))
+       core/merge))
+
 (defn editor
   [& _]
   (let [state (atom {})]
