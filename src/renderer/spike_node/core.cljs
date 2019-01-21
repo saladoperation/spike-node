@@ -322,7 +322,6 @@
    :bottom           0
    :color            "white"
    :position         "absolute"
-   :width            (get-percent right-pane)
    :z-index          maximum-z-index})
 
 (defn input-component
@@ -341,7 +340,7 @@
          :on-key-down #(-> %
                            .-key
                            command-keydown)
-         :style       message-style
+         :style       (s/setval :width (get-percent left-pane) message-style)
          :value       s}])}))
 
 (defn command-component
@@ -371,7 +370,8 @@
   [:div {:style (merge message-style {:display (if (or (empty? error*)
                                                        editor-command*)
                                                  "none"
-                                                 "block")})}
+                                                 "block")
+                                      :width   (get-percent right-pane)})}
    error*])
 
 (defn app-component
