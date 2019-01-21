@@ -358,7 +358,8 @@
             (mapv (comp vec
                         (partial cons math-node))
                   current-node*)
-            [:svg {:style {:width "100%"}}
+            [:svg {:style {:height "100%"
+                           :width  "100%"}}
              [:rect {:height cursor-size
                      :stroke "red"
                      :width  cursor-size
