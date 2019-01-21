@@ -76,14 +76,17 @@
   (m/<> (->> open
              (core/remove fs/fexists?)
              (m/<$> (fn [k]
-                      {k {}})))
+                      [k {}])))
         (->> open
              (core/filter (aid/build and
                                      fs/fexists?
                                      valid-file?))
              (m/<$> (fn [k]
-                      {k (comp edn/read-string
-                               slurp)})))))
+                      [k (comp edn/read-string
+                               slurp)])))))
+
+(def active-file-path
+  (m/<$> first active-file))
 
 (defn get-cursor-event
   [plus minus]
@@ -456,6 +459,10 @@
 (def app-view
   ((aid/lift-a app-component) graph-view command-view editor-view error-view))
 
+(frp/run (comp aid/funcall
+               :prevent-default)
+         window/submit)
+
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
 
@@ -483,9 +490,5 @@
    "u"      undo})
 
 (bind-keymap keymap)
-
-(frp/run (comp aid/funcall
-               :prevent-default)
-         window/submit)
 
 (frp/activate)
