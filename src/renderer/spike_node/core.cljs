@@ -56,9 +56,11 @@
        (m/<$> last)))
 
 (def open
-  (m/<$> (comp (partial apply path.join)
-               reverse)
-         (frp/snapshot relative-path directory-behavior)))
+  (->> directory-behavior
+       (frp/snapshot relative-path)
+       (m/<$> (comp (partial apply path.join)
+                    reverse))
+       core/dedupe))
 
 (def edn?
   #(try (do (edn/read-string %)
