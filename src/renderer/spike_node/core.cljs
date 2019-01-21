@@ -344,6 +344,19 @@
          :style       message-style
          :value       s}])}))
 
+(defn graph-component
+  [current-node* cursor-x* cursor-y*]
+  (s/setval s/END
+            (mapv (comp vec
+                        (partial cons math-node))
+                  current-node*)
+            [:svg {:style {:width "100%"}}
+             [:rect {:height cursor-size
+                     :stroke "red"
+                     :width  cursor-size
+                     :x      (* cursor-x* cursor-size)
+                     :y      (* cursor-y* cursor-size)}]]))
+
 (defn app-component
   [cursor-x*
    cursor-y*
@@ -360,16 +373,7 @@
                  :overflow         "hidden"
                  :width            "100%"}}
    [:div {:style {:width (get-percent left-pane)}}
-    (s/setval s/END
-              (mapv (comp vec
-                          (partial cons math-node))
-                    current-node*)
-              [:svg {:style {:width "100%"}}
-               [:rect {:height cursor-size
-                       :stroke "red"
-                       :width  cursor-size
-                       :x      (* cursor-x* cursor-size)
-                       :y      (* cursor-y* cursor-size)}]])
+    [graph-component current-node* cursor-x* cursor-y*]
     [:form {:style     {:display (case mode*
                                    :command "block"
                                    "none")}
