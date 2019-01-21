@@ -1,8 +1,10 @@
 (ns spike-node.core
   (:require [clojure.string :as str]
+            [cljs.tools.reader.edn :as edn]
             [ace-editor]
             [aid.core :as aid]
             [cats.core :as m]
+            [cljs-node-io.core :refer [slurp]]
             [cljs-node-io.fs :as fs]
             [cljsjs.mousetrap]
             [com.rpl.specter :as s]
@@ -14,7 +16,7 @@
             [reagent.core :as r]
             [spike-node.helpers :as helpers]))
 
-(frp/defe file
+(frp/defe file-path
           down
           up
           left
@@ -37,14 +39,14 @@
 (def path
   (js/require "path"))
 
-(def path-event
-  (m/<$> fs/dirname file))
+(def directory-event
+  (m/<$> fs/dirname file-path))
 
 (def default-path
   (path.join (.homedir os) "Documents"))
 
-(def path-behavior
-  (frp/stepper default-path path-event))
+(def directory-behavior
+  (frp/stepper default-path directory-event))
 
 (def filename
   (->> submission
@@ -56,10 +58,32 @@
 (def open
   (m/<$> (comp (partial apply path.join)
                reverse)
-         (frp/snapshot filename path-behavior)))
+         (frp/snapshot filename directory-behavior)))
 
-(def new
-  (core/remove fs/fexists? open))
+(def edn?
+  #(try (do (edn/read-string %)
+            true)
+        ;TODO limit the error
+        (catch js/Error _
+          false)))
+
+(def valid-file?
+  ;TODO validate the keys and values
+  (comp edn?
+        slurp))
+
+(def active-file
+  (m/<> (->> open
+             (core/remove fs/fexists?)
+             (m/<$> (fn [k]
+                      {k {}})))
+        (->> open
+             (core/filter (aid/build and
+                                     fs/fexists?
+                                     valid-file?))
+             (m/<$> (fn [k]
+                      {k (comp edn/read-string
+                               slurp)})))))
 
 (defn get-cursor-event
   [plus minus]
@@ -129,12 +153,12 @@
        (catch js/katex.ParseError error
          (str error))))
 
-(def valid?
+(def valid-expression?
   (comp empty?
         get-error))
 
 (def valid
-  (core/filter valid? insert-typing))
+  (core/filter valid-expression? insert-typing))
 
 (def typed
   (->> (m/<> x-event y-event)
@@ -435,7 +459,7 @@
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
 
-(.ipcRenderer.on helpers/electron helpers/channel (comp path-event
+(.ipcRenderer.on helpers/electron helpers/channel (comp directory-event
                                                         last
                                                         vector))
 
