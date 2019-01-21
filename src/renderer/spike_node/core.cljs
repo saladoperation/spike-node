@@ -16,7 +16,8 @@
             [reagent.core :as r]
             [spike-node.helpers :as helpers]))
 
-(frp/defe previous-file-path
+(frp/defe loop-file
+          loop-file-path
           down
           up
           left
@@ -41,7 +42,7 @@
   (js/require "path"))
 
 (def directory-event
-  (m/<$> fs/dirname previous-file-path))
+  (m/<$> fs/dirname loop-file-path))
 
 (def default-path
   (-> os
@@ -485,7 +486,9 @@
   ((aid/lift-a app-component) graph-view command-view editor-view error-view))
 
 ;TODO don't use two events when ClojureScript supports lazy evaluation
-(frp/run previous-file-path current-file-path)
+(frp/run loop-file-path current-file-path)
+
+(frp/run loop-file current-file)
 
 (frp/run (comp aid/funcall
                :prevent-default)
