@@ -189,11 +189,12 @@
                               identity)
                    ffirst)
              (if typed*
-               (comp
-                 (partial s/transform* s/FIRST (partial take undo-size))
-                 (aid/transfer* [s/FIRST s/BEFORE-ELEM]
-                                (comp (make-transform-current-content x y s)
-                                      ffirst)))
+               (comp (partial s/transform* s/FIRST (partial take undo-size))
+                     (aid/transfer* [s/FIRST s/BEFORE-ELEM]
+                                    (comp (make-transform-current-content x
+                                                                          y
+                                                                          s)
+                                          ffirst)))
                identity))))))
 
 (def multiton?
