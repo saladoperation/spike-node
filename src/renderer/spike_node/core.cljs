@@ -12,7 +12,7 @@
             [loom.graph :as graph]
             [reagent.core :as r]))
 
-(frp/defe file-event
+(frp/defe file
           down
           up
           left
