@@ -375,14 +375,7 @@
    error*])
 
 (defn app-component
-  [x*
-   y*
-   mode*
-   current-node*
-   insert-text*
-   command-text*
-   error*
-   editor-command*]
+  [graph-view* command-view* editor-view* error-view*]
   [:div {:style {:background-color background-color
                  :color            "white"
                  :display          "flex"
@@ -390,24 +383,29 @@
                  :overflow         "hidden"
                  :width            "100%"}}
    [:div {:style {:width (get-percent left-pane)}}
-    [graph-component current-node* x* y*]
-    [command-component mode* command-text*]]
+    graph-view*
+    command-view*]
    [:div {:style {:width (get-percent right-pane)}}
-    [editor mode* insert-text*]
-    [error-component error* editor-command*]]])
+    editor-view*
+    error-view*]])
 
-(def app
-  ((aid/lift-a app-component)
-    x-behavior
-    y-behavior
-    mode
-    current-node
-    insert-text
-    command-text
-    error
-    editor-command))
+(def graph-view
+  ((aid/lift-a graph-component) current-node x-behavior y-behavior))
 
-(frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
+(def command-view
+  ((aid/lift-a command-component) mode command-text))
+
+(def editor-view
+  ((aid/lift-a (partial vector editor)) mode insert-text))
+
+(def error-view
+  ((aid/lift-a error-component) error editor-command))
+
+(def app-view
+  ((aid/lift-a app-component) graph-view command-view editor-view error-view))
+
+(frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
+         app-view)
 
 (.ipcRenderer.on helpers/electron helpers/channel (comp path
                                                         last
