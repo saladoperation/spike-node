@@ -48,7 +48,7 @@
 (def directory-behavior
   (frp/stepper default-path directory-event))
 
-(def filename
+(def relative-path
   (->> submission
        (m/<$> (partial (aid/flip str/split) #" "))
        (core/filter (comp (partial = ":e")
@@ -58,7 +58,7 @@
 (def open
   (m/<$> (comp (partial apply path.join)
                reverse)
-         (frp/snapshot filename directory-behavior)))
+         (frp/snapshot relative-path directory-behavior)))
 
 (def edn?
   #(try (do (edn/read-string %)
