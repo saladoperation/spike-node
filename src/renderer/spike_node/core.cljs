@@ -352,7 +352,7 @@
    [input-component command-text*]])
 
 (defn graph-component
-  [current-node* cursor-x* cursor-y*]
+  [current-node* x* y*]
   (s/setval s/END
             (mapv (comp vec
                         (partial cons math-node))
@@ -362,8 +362,8 @@
              [:rect {:height cursor-size
                      :stroke "red"
                      :width  cursor-size
-                     :x      (* cursor-x* cursor-size)
-                     :y      (* cursor-y* cursor-size)}]]))
+                     :x      (* x* cursor-size)
+                     :y      (* y* cursor-size)}]]))
 
 (defn error-component
   [error* editor-command*]
@@ -375,8 +375,8 @@
    error*])
 
 (defn app-component
-  [cursor-x*
-   cursor-y*
+  [x*
+   y*
    mode*
    current-node*
    insert-text*
@@ -390,7 +390,7 @@
                  :overflow         "hidden"
                  :width            "100%"}}
    [:div {:style {:width (get-percent left-pane)}}
-    [graph-component current-node* cursor-x* cursor-y*]
+    [graph-component current-node* x* y*]
     [command-component mode* command-text*]]
    [:div {:style {:width (get-percent right-pane)}}
     [editor mode* insert-text*]
