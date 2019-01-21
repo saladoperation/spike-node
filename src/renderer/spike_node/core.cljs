@@ -164,28 +164,37 @@
        (m/<> (aid/<$ true valid))
        (frp/stepper false)))
 
+(defn make-transform-current-content
+  [x y s]
+  (partial s/setval*
+           [:node
+            (s/multi-path [:y-x
+                           (s/keypath [y
+                                       x])]
+                          [:x-y
+                           (s/keypath [x
+                                       y])])
+            :text]
+           s))
+
 (def action
   (->> valid
        (frp/stepper "")
        (frp/snapshot normal x-behavior y-behavior typed)
        (m/<$>
          (fn [[_ x y typed* s]]
-           (if typed*
-             (comp
-               (partial s/transform* s/FIRST (partial take undo-size))
-               (aid/transfer* [s/FIRST s/BEFORE-ELEM]
-                              (comp (partial s/setval*
-                                             [:node
-                                              (s/multi-path [:y-x
-                                                             (s/keypath [y
-                                                                         x])]
-                                                            [:x-y
-                                                             (s/keypath [x
-                                                                         y])])
-                                              :text]
-                                             s)
-                                    ffirst)))
-             identity)))))
+           (aid/if-else
+             (comp (aid/build =
+                              (make-transform-current-content x y s)
+                              identity)
+                   ffirst)
+             (if typed*
+               (comp
+                 (partial s/transform* s/FIRST (partial take undo-size))
+                 (aid/transfer* [s/FIRST s/BEFORE-ELEM]
+                                (comp (make-transform-current-content x y s)
+                                      ffirst)))
+               identity))))))
 
 (def multiton?
   (comp (partial < 1)
@@ -278,7 +287,15 @@
                        x-behavior
                        y-behavior))
        (m/<$> (partial apply hash-map))
-       core/merge))
+       core/merge
+       (frp/stepper {})))
+
+(def current-file
+  (m/<$> (fn [[k m]]
+           (get m k (aid/casep k
+                      fs/fexists? (edn/read-string (slurp k))
+                      {})))
+         (frp/snapshot current-file-path file)))
 
 (defn editor
   [& _]
