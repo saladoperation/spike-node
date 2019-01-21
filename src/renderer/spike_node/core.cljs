@@ -58,6 +58,9 @@
                reverse)
          (frp/snapshot filename path-behavior)))
 
+(def new
+  (core/remove fs/fexists? open))
+
 (defn get-cursor-event
   [plus minus]
   (->> (m/<> (aid/<$ (aid/if-then pos?
