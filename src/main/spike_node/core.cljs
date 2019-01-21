@@ -5,19 +5,30 @@
 (def electron
   (js/require "electron"))
 
+(def channel
+  "channel")
+
 (def window-state-keeper
   (js/require "electron-window-state"))
 
-(.on (.-app electron)
+(def app
+  (.-app electron))
+
+(.on app
      "ready"
      (fn [_]
-       (let [window-state (window-state-keeper. {})]
+       (let [window-state (window-state-keeper. {})
+             window (electron.BrowserWindow. window-state)]
          (doto
-          (electron.BrowserWindow. window-state)
-          (.loadURL (str/join "/" ["file:/"
-                                   ;TODO deal with advanced optimizations
-                                   (-> js/__dirname
-                                       fs/dirname
-                                       fs/dirname)
-                                   "public/index.html"]))
-          window-state.manage))))
+           window
+           (.webContents.on "did-finish-load"
+                            #(->> "documents"
+                                  (.getPath app)
+                                  (.webContents.send window channel)))
+           (.loadURL (str/join "/" ["file:/"
+                                    ;TODO deal with advanced optimizations
+                                    (-> js/__dirname
+                                        fs/dirname
+                                        fs/dirname)
+                                    "public/index.html"]))
+           window-state.manage))))

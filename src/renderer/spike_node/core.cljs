@@ -3,6 +3,7 @@
             [ace-editor]
             [aid.core :as aid]
             [cats.core :as m]
+            [cljs-node-io.fs :as fs]
             [cljsjs.mousetrap]
             [com.rpl.specter :as s]
             [frp.clojure.core :as core]
@@ -11,6 +12,13 @@
             [katex]
             [loom.graph :as graph]
             [reagent.core :as r]))
+
+;TODO move this definition to helpers
+(def electron
+  (js/require "electron"))
+
+(def channel
+  "channel")
 
 (frp/defe file
           down
@@ -27,6 +35,9 @@
           submission
           undo
           redo)
+
+(def path
+  (m/<$> fs/dirname file))
 
 (defn get-cursor-event
   [plus minus]
@@ -368,6 +379,10 @@
     error))
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
+
+(.ipcRenderer.on electron channel (comp path
+                                        last
+                                        vector))
 
 (defn bind
   [s e]
