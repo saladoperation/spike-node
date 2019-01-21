@@ -72,21 +72,12 @@
   (comp edn?
         slurp))
 
-(def current-file
-  (m/<> (->> open
-             (core/remove fs/fexists?)
-             (m/<$> (fn [k]
-                      [k {}])))
-        (->> open
-             (core/filter (aid/build and
-                                     fs/fexists?
-                                     valid-file?))
-             (m/<$> (fn [k]
-                      [k (comp edn/read-string
-                               slurp)])))))
-
 (def current-file-path
-  (m/<$> first current-file))
+  (m/<> (core/remove fs/fexists? open)
+        (core/filter (aid/build and
+                                fs/fexists?
+                                valid-file?)
+                     open)))
 
 (defn get-cursor-event
   [plus minus]
