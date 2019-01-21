@@ -31,6 +31,13 @@
           undo
           redo)
 
+(def open
+  (->> submission
+       (m/<$> (partial (aid/flip str/split) #" "))
+       (core/filter (comp (partial = ":e")
+                          first))
+       (m/<$> last)))
+
 (def path
   (m/<$> fs/dirname file))
 
