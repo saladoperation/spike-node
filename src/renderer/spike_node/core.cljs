@@ -22,7 +22,8 @@
           left
           right
           normal-escape
-          insert
+          insert-normal
+          insert-insert
           command
           editor-keydown
           editor-keyup
@@ -130,9 +131,9 @@
         last))
 
 (def normal
-  (->> insert
-       (m/<$> vector)
-       (m/<> editor-keydown)
+  (->> (m/<> (aid/<$ [""] insert-normal)
+             (aid/<$ ["INSERT"] insert-insert)
+             editor-keydown)
        (core/partition 2 1)
        (core/filter (aid/build and
                                (comp (partial = "")
@@ -264,7 +265,7 @@
 
 (def mode
   (frp/stepper :normal (m/<> (aid/<$ :normal normal)
-                             (aid/<$ :insert insert)
+                             (aid/<$ :insert (m/<> insert-normal insert-insert))
                              (aid/<$ :command command))))
 
 (def editor-command
@@ -351,9 +352,6 @@
            :keyboard-handler "vim"
            :mode             "latex"
            :on-change        #(insert-typing %)
-           :on-focus         #(insert
-                                (.keyBinding.getStatusText (:editor @state)
-                                                           (:editor @state)))
            :ref              #(if %
                                 (swap! state
                                        (partial s/setval*
@@ -512,11 +510,11 @@
    "ctrl+r" redo
    "escape" normal-escape
    "h"      left
-   "i"      insert
+   "i"      insert-insert
    "j"      down
    "k"      up
    "l"      right
-   "space"  insert
+   "space"  insert-normal
    "u"      undo})
 
 (bind-keymap keymap)
