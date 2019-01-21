@@ -85,6 +85,9 @@
                                 valid-file?)
                      open)))
 
+(def initial-cursor
+  0)
+
 (defn get-cursor-event
   [plus minus move]
   (->> (m/<> (aid/<$ (aid/if-then pos?
@@ -92,10 +95,10 @@
                      minus)
              (aid/<$ inc plus)
              (m/<$> constantly move))
-       (frp/accum 0)))
+       (frp/accum initial-cursor)))
 
 (def get-cursor-behavior
-  (partial frp/stepper 0))
+  (partial frp/stepper initial-cursor))
 
 (def x-event
   (->> loop-file
@@ -201,7 +204,10 @@
                                                                           y
                                                                           s)
                                           ffirst)))
-               identity))))))
+               identity))))
+       (m/<> (m/<$> (comp constantly
+                          :content)
+                    loop-file))))
 
 (def multiton?
   (comp (partial < 1)
@@ -301,7 +307,9 @@
   (m/<$> (fn [[k m]]
            (get m k (aid/casep k
                       fs/fexists? (edn/read-string (slurp k))
-                      {})))
+                      {:content initial-content
+                       :x       initial-cursor
+                       :y       initial-cursor})))
          (frp/snapshot current-file-path file)))
 
 (defn editor
