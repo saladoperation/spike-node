@@ -353,7 +353,7 @@
    [input-component command-text*]])
 
 (defn graph-component
-  [current-node* x* y*]
+  [current-node* x y]
   (s/setval s/END
             (mapv (comp vec
                         (partial cons math-node))
@@ -363,8 +363,8 @@
              [:rect {:height cursor-size
                      :stroke "red"
                      :width  cursor-size
-                     :x      (* x* cursor-size)
-                     :y      (* y* cursor-size)}]]))
+                     :x      (* x cursor-size)
+                     :y      (* y cursor-size)}]]))
 
 (defn error-component
   [error* editor-command*]
