@@ -303,13 +303,16 @@
        core/merge
        (frp/stepper {})))
 
+(def initial-file
+  {:content initial-content
+   :x       initial-cursor
+   :y       initial-cursor})
+
 (def current-file
   (m/<$> (fn [[k m]]
            (get m k (aid/casep k
                       fs/fexists? (edn/read-string (slurp k))
-                      {:content initial-content
-                       :x       initial-cursor
-                       :y       initial-cursor})))
+                      initial-file)))
          (frp/snapshot current-file-path file)))
 
 (defn editor
