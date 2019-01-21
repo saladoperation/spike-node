@@ -53,6 +53,11 @@
                           first))
        (m/<$> last)))
 
+(def open
+  (m/<$> (comp (partial apply path.join)
+               reverse)
+         (frp/snapshot filename path-behavior)))
+
 (defn get-cursor-event
   [plus minus]
   (->> (m/<> (aid/<$ (aid/if-then pos?
