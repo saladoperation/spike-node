@@ -1,30 +1,25 @@
 (ns spike-node.core
   (:require [clojure.string :as str]
-            [cljs-node-io.fs :as fs]))
-
-(def electron
-  (js/require "electron"))
-
-(def channel
-  "channel")
+            [cljs-node-io.fs :as fs]
+            [spike-node.helpers :as helpers]))
 
 (def window-state-keeper
   (js/require "electron-window-state"))
 
 (def app
-  (.-app electron))
+  (.-app helpers/electron))
 
 (.on app
      "ready"
      (fn [_]
        (let [window-state (window-state-keeper. {})
-             window (electron.BrowserWindow. window-state)]
+             window (helpers/electron.BrowserWindow. window-state)]
          (doto
            window
            (.webContents.on "did-finish-load"
                             #(->> "documents"
                                   (.getPath app)
-                                  (.webContents.send window channel)))
+                                  (.webContents.send window helpers/channel)))
            (.loadURL (str/join "/" ["file:/"
                                     ;TODO deal with advanced optimizations
                                     (-> js/__dirname

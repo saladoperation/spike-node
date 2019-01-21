@@ -54,7 +54,7 @@
 
 (def build
   {:id           id
-   :source-paths [(get-path "src" argument)]
+   :source-paths (map (partial get-path "src") [argument "helpers"])
    :compiler     compiler
    :figwheel     true})
 

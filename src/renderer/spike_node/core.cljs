@@ -11,14 +11,8 @@
             [frp.window :as window]
             [katex]
             [loom.graph :as graph]
-            [reagent.core :as r]))
-
-;TODO move this definition to helpers
-(def electron
-  (js/require "electron"))
-
-(def channel
-  "channel")
+            [reagent.core :as r]
+            [spike-node.helpers :as helpers]))
 
 (frp/defe file
           down
@@ -380,9 +374,9 @@
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app")) app)
 
-(.ipcRenderer.on electron channel (comp path
-                                        last
-                                        vector))
+(.ipcRenderer.on helpers/electron helpers/channel (comp path
+                                                        last
+                                                        vector))
 
 (defn bind
   [s e]
