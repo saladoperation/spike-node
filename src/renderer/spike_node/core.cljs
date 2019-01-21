@@ -43,7 +43,9 @@
   (m/<$> fs/dirname previous-file-path))
 
 (def default-path
-  (path.join (.homedir os) "Documents"))
+  (-> os
+      .homedir
+      (path.join "Documents")))
 
 (def directory-behavior
   (frp/stepper default-path directory-event))
