@@ -325,7 +325,7 @@
    :width            (get-percent right-pane)
    :z-index          maximum-z-index})
 
-(defn command-component
+(defn input-component
   [_]
   (r/create-class
     {:component-did-update
@@ -343,6 +343,14 @@
                            command-keydown)
          :style       message-style
          :value       s}])}))
+
+(defn command-component
+  [mode* command-text*]
+  [:form {:style     {:display (case mode*
+                                 :command "block"
+                                 "none")}
+          :on-submit #(submission command-text*)}
+   [input-component command-text*]])
 
 (defn graph-component
   [current-node* cursor-x* cursor-y*]
@@ -374,11 +382,7 @@
                  :width            "100%"}}
    [:div {:style {:width (get-percent left-pane)}}
     [graph-component current-node* cursor-x* cursor-y*]
-    [:form {:style     {:display (case mode*
-                                   :command "block"
-                                   "none")}
-            :on-submit #(submission command-text*)}
-     [command-component command-text*]]]
+    [command-component mode* command-text*]]
    [:div {:style {:width (get-percent right-pane)}}
     [editor mode* insert-text*]
     [:div {:style (merge message-style {:display (if (or editor-command*
