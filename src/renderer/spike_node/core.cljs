@@ -365,6 +365,14 @@
                      :x      (* cursor-x* cursor-size)
                      :y      (* cursor-y* cursor-size)}]]))
 
+(defn error-component
+  [error* editor-command*]
+  [:div {:style (merge message-style {:display (if (or (empty? error*)
+                                                       editor-command*)
+                                                 "none"
+                                                 "block")})}
+   error*])
+
 (defn app-component
   [cursor-x*
    cursor-y*
@@ -385,11 +393,7 @@
     [command-component mode* command-text*]]
    [:div {:style {:width (get-percent right-pane)}}
     [editor mode* insert-text*]
-    [:div {:style (merge message-style {:display (if (or editor-command*
-                                                         (empty? error*))
-                                                   "none"
-                                                   "block")})}
-     error*]]])
+    [error-component error* editor-command*]]])
 
 (def app
   ((aid/lift-a app-component)
