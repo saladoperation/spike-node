@@ -49,14 +49,15 @@
       .homedir
       (path.join "Documents")))
 
-(def directory
-  (->> loop-file-path
-       (m/<$> fs/dirname)
-       (frp/stepper default-path)))
+(def loop-directory-event
+  (m/<$> fs/dirname loop-file-path))
+
+(def loop-directory-behavior
+  (frp/stepper default-path loop-directory-event))
 
 (defn get-potential-path
   [s]
-  (->> directory
+  (->> loop-directory-behavior
        (frp/snapshot (->> submission
                           (m/<$> (partial (aid/flip str/split) #" "))
                           (core/filter (comp (partial = (str ":" s))
@@ -553,9 +554,12 @@
     error-view))
 
 ;TODO don't use two events when ClojureScript supports lazy evaluation
-(frp/run loop-file-path current-file-path)
+(def loop-event
+  (partial run! (partial apply frp/run)))
 
-(frp/run loop-file current-file)
+(loop-event {loop-directory-event current-directory-path
+             loop-file-path       current-file-path
+             loop-file            current-file})
 
 (frp/run (comp aid/funcall
                :prevent-default)
