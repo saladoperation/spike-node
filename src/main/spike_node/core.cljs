@@ -11,9 +11,6 @@
 (def window-state-keeper
   (js/require "electron-window-state"))
 
-(def channel
-  "channel")
-
 (def app
   (.-app electron))
 
