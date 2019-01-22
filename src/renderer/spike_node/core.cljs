@@ -55,7 +55,8 @@
     fs/fexists? (->> config-path
                      slurp
                      str/split-lines
-                     (remove empty?))
+                     (remove empty?)
+                     (map (partial str ":")))
     []))
 
 (def default-path
