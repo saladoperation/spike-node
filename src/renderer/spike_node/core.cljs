@@ -98,10 +98,10 @@
                                      valid-file?))
                open))
 
-(def unopened
+(def opened
   (->> current-file-path
-       (m/<$> empty?)
-       (frp/stepper true)))
+       (m/<$> (complement empty?))
+       (frp/stepper false)))
 
 (def initial-cursor
   0)
@@ -512,19 +512,22 @@
    error*])
 
 (defn app-component
-  [graph-view* command-view* editor-view* error-view*]
-  [:div {:style {:background-color background-color
-                 :color            "white"
-                 :display          "flex"
-                 :height           "100%"
-                 :overflow         "hidden"
-                 :width            "100%"}}
-   [:div {:style {:width (get-percent left-pane)}}
-    graph-view*
-    command-view*]
-   [:div {:style {:width (get-percent right-pane)}}
-    editor-view*
-    error-view*]])
+  [opened* graph-view* command-view* editor-view* error-view*]
+  (s/setval s/BEGINNING
+            [:div {:style {:background-color background-color
+                           :color            "white"
+                           :display          "flex"
+                           :height           "100%"
+                           :overflow         "hidden"
+                           :width            "100%"}}]
+            (if opened*
+              [[:div {:style {:width (get-percent left-pane)}}
+                graph-view*
+                command-view*]
+               [:div {:style {:width (get-percent right-pane)}}
+                editor-view*
+                error-view*]]
+              [command-view*])))
 
 (def graph-view
   ((aid/lift-a graph-component) current-node x-behavior y-behavior))
@@ -539,7 +542,12 @@
   ((aid/lift-a error-component) error editor-command))
 
 (def app-view
-  ((aid/lift-a app-component) graph-view command-view editor-view error-view))
+  ((aid/lift-a app-component)
+    opened
+    graph-view
+    command-view
+    editor-view
+    error-view))
 
 ;TODO don't use two events when ClojureScript supports lazy evaluation
 (frp/run loop-file-path current-file-path)
