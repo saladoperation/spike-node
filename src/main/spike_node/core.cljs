@@ -1,5 +1,6 @@
 (ns spike-node.core
-  (:require [cljs-node-io.fs :as fs]))
+  (:require [aid.core :as aid]
+            [cljs-node-io.fs :as fs]))
 
 (def electron
   (js/require "electron"))
@@ -23,9 +24,10 @@
          (doto
            (electron.BrowserWindow. window-state)
            (.loadURL (->> "public/index.html"
-                          ;TODO deal with advanced optimizations
-                          (path.join (-> js/__dirname
-                                         fs/dirname
-                                         fs/dirname))
+                          (path.join (aid/if-else (comp (partial = "resources")
+                                                        fs/basename)
+                                                  (comp fs/dirname
+                                                        fs/dirname)
+                                                  js/__dirname))
                           (str "file://")))
            window-state.manage))))
