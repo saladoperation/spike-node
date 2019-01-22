@@ -14,6 +14,7 @@
             [katex]
             [loom.graph :as graph]
             [reagent.core :as r]
+            [spike-node.loom :as loom]
             [spike-node.helpers :as helpers]))
 
 (frp/defe loop-file
