@@ -147,14 +147,13 @@
      :edge (graph/digraph)}]
    []])
 
-(def escape?
-  (partial = "Escape"))
-
-(def command-escape
-  (core/filter escape? command-keydown))
+(def exit?
+  #{"Control" "Escape"})
 
 (def command-exit
-  (m/<> command-escape submission))
+  (->> command-keydown
+       (core/filter exit?)
+       (m/<> submission)))
 
 (def llast
   (comp last
@@ -168,7 +167,7 @@
        (core/filter (aid/build and
                                (comp (partial = "")
                                      ffirst)
-                               (comp escape?
+                               (comp exit?
                                      llast)))
        (m/<> normal-escape command-exit)))
 
