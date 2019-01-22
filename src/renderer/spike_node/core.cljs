@@ -249,6 +249,11 @@
                                                 lfirst))
                            redo))))
 
+(def get-current-x-y
+  (comp :x-y
+        :node
+        ffirst))
+
 (def current-node
   (->> (frp/snapshot valid
                      x-behavior
@@ -271,7 +276,14 @@
                     (frp/snapshot x-event y-behavior current-node))
              (m/<$> (fn [[y x m]]
                       (get m [x y] ""))
-                    (frp/snapshot y-event x-behavior current-node)))
+                    (frp/snapshot y-event x-behavior current-node))
+             (m/<$> (aid/build s/select-one*
+                               (comp (partial (aid/flip vector) :text)
+                                     s/keypath
+                                     (juxt :x :y))
+                               (comp get-current-x-y
+                                     :content))
+                    loop-file))
        (frp/stepper "")))
 
 (def error
