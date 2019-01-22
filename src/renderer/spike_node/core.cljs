@@ -65,18 +65,21 @@
 (def loop-directory-event
   (m/<$> fs/dirname loop-file-path))
 
-(def loop-directory-behavior
+(def directory-behavior
   (frp/stepper default-path loop-directory-event))
 
 (defn get-potential-path
   [s]
-  (->> loop-directory-behavior
+  (->> directory-behavior
        (frp/snapshot (->> submission
                           (m/<$> (partial (aid/flip str/split) #" "))
                           (core/filter (comp (partial = (str ":" s))
                                              first))
                           (m/<$> last)))
-       (m/<$> (comp (partial apply path.join)
+       (m/<$> (comp (aid/if-then-else (comp fs/absolute?
+                                            last)
+                                      last
+                                      (partial apply path.join))
                     reverse))
        core/dedupe))
 
@@ -611,3 +614,5 @@
                                                      ["insert" "command"]))))
 
 (frp/activate)
+
+(run! submission config-commands)
