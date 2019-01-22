@@ -98,6 +98,11 @@
                                      valid-file?))
                open))
 
+(def unopened
+  (->> current-file-path
+       (m/<$> empty?)
+       (frp/stepper true)))
+
 (def initial-cursor
   0)
 
