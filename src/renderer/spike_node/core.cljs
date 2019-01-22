@@ -6,7 +6,7 @@
             [aid.core :as aid]
             [cats.core :as m]
             [clojure.math.combinatorics :as combo]
-            [cljs-node-io.core :refer [slurp]]
+            [cljs-node-io.core :refer [slurp spit]]
             [cljs-node-io.fs :as fs]
             [cljsjs.mousetrap]
             [com.rpl.specter :as s]
@@ -361,7 +361,10 @@
 (def modification
   (core/remove (fn [[path* m]]
                  (and (fs/fexists? path*)
-                      (= (read-file (slurp path*)) m)))
+                      (-> path*
+                          slurp
+                          read-file
+                          (= m))))
                file-entry))
 
 (def initial-file
@@ -616,3 +619,5 @@
 (frp/activate)
 
 (run! submission config-commands)
+
+(frp/run (partial apply spit) modification)
