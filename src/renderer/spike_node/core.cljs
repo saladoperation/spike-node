@@ -44,10 +44,22 @@
 (def path
   (js/require "path"))
 
+(def home
+  (.homedir os))
+
+(def config-path
+  (path.join home ".spike-noderc"))
+
+(def config-commands
+  (aid/casep config-path
+    fs/fexists? (->> config-path
+                     slurp
+                     str/split-lines
+                     (remove empty?))
+    []))
+
 (def default-path
-  (-> os
-      .homedir
-      (path.join "Documents")))
+  (path.join home "Documents"))
 
 (def loop-directory-event
   (m/<$> fs/dirname loop-file-path))
