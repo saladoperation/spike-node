@@ -67,8 +67,19 @@
                     reverse))
        core/dedupe))
 
+(def read-file
+  (partial edn/read-string
+           {:readers {'spike-node.core.Table
+                      (partial s/transform*
+                               s/MAP-VALS
+                               (partial into
+                                        (sorted-map)))
+                      'loom.graph.BasicEditableDigraph
+                      (comp loom/digraph
+                            :adj)}}))
+
 (def edn?
-  #(try (do (edn/read-string %)
+  #(try (do (read-file %)
             true)
         ;TODO limit the error
         (catch js/Error _
@@ -80,11 +91,12 @@
         slurp))
 
 (def current-file-path
-  (m/<> (core/remove fs/fexists? open)
-        (core/filter (aid/build and
-                                fs/fexists?
-                                valid-file?)
-                     open)))
+  (core/filter (aid/build or
+                          (complement fs/fexists?)
+                          (aid/build and
+                                     fs/fexists?
+                                     valid-file?))
+               open))
 
 (def initial-cursor
   0)
@@ -309,25 +321,10 @@
        core/merge
        (frp/stepper {})))
 
-(def read-file
-  (partial edn/read-string
-           {:readers {'spike-node.core.Table
-                      (partial s/transform*
-                               s/MAP-VALS
-                               (partial into
-                                        (sorted-map)))
-                      'loom.graph.BasicEditableDigraph
-                      (comp loom/digraph
-                            :adj)}}))
-
-(def slurp-read-file
-  (comp read-file
-        slurp))
-
 (def modification
   (core/remove (fn [[path* m]]
                  (and (fs/fexists? path*)
-                      (= (slurp-read-file path*) m)))
+                      (= (read-file (slurp path*)) m)))
                file-entry))
 
 (def initial-file
@@ -338,7 +335,7 @@
 (def current-file
   (m/<$> (fn [[k m]]
            (get m k (aid/casep k
-                      fs/fexists? (slurp-read-file k)
+                      fs/fexists? (read-file (slurp k))
                       initial-file)))
          (frp/snapshot current-file-path file)))
 
