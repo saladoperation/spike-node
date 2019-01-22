@@ -291,20 +291,43 @@
                     editor-keydown))
        (frp/stepper false)))
 
+(def file-entry
+  (frp/snapshot (->> current-file-path
+                     (core/partition 2 1)
+                     (m/<$> first))
+                ((aid/lift-a (fn [content* x y]
+                               {:content content*
+                                :x       x
+                                :y       y}))
+                  (frp/stepper initial-content content)
+                  x-behavior
+                  y-behavior)))
+
 (def file
-  (->> (frp/snapshot (->> current-file-path
-                          (core/partition 2 1)
-                          (m/<$> first))
-                     ((aid/lift-a (fn [content* x y]
-                                    {:content content*
-                                     :x       x
-                                     :y       y}))
-                       (frp/stepper initial-content content)
-                       x-behavior
-                       y-behavior))
+  (->> file-entry
        (m/<$> (partial apply hash-map))
        core/merge
        (frp/stepper {})))
+
+(def read-file
+  (partial edn/read-string
+           {:readers {'spike-node.core.Table (partial s/transform*
+                                                      s/MAP-VALS
+                                                      (partial into
+                                                               (sorted-map)))
+                      'loom.graph.BasicEditableDigraph
+                                             (comp loom/digraph
+                                                   :adj)}}))
+
+(def slurp-read-file
+  (comp read-file
+        slurp))
+
+(def modification
+  (core/remove (fn [[path* m]]
+                 (and (fs/fexists? path*)
+                      (= (slurp-read-file path*) m)))
+               file-entry))
 
 (def initial-file
   {:content initial-content
@@ -314,7 +337,7 @@
 (def current-file
   (m/<$> (fn [[k m]]
            (get m k (aid/casep k
-                      fs/fexists? (edn/read-string (slurp k))
+                      fs/fexists? (slurp-read-file k)
                       initial-file)))
          (frp/snapshot current-file-path file)))
 
