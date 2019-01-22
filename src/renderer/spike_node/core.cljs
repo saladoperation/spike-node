@@ -1,9 +1,11 @@
 (ns spike-node.core
   (:require [clojure.string :as str]
             [cljs.tools.reader.edn :as edn]
+            [ace]
             [ace-editor]
             [aid.core :as aid]
             [cats.core :as m]
+            [clojure.math.combinatorics :as combo]
             [cljs-node-io.core :refer [slurp]]
             [cljs-node-io.fs :as fs]
             [cljsjs.mousetrap]
@@ -583,5 +585,13 @@
    "u"      undo})
 
 (bind-keymap keymap)
+
+(.config.loadModule ace
+                    "ace/keyboard/vim"
+                    (fn [module]
+                      (run! (partial apply (.-CodeMirror.Vim.map module))
+                            (combo/cartesian-product ["C-c" "jk" "kj"]
+                                                     ["<Esc>"]
+                                                     ["insert" "command"]))))
 
 (frp/activate)

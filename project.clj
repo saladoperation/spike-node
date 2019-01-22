@@ -1,6 +1,7 @@
 (defproject spike-node "0.1.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/clojurescript "1.10.439"]
+                 [org.clojure/math.combinatorics "0.1.4"]
                  [cljs-node-io "1.1.2"]
                  [cljsjs/mousetrap "1.5.3-0"]
                  [frp "0.1.3"]

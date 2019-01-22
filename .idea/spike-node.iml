@@ -11,7 +11,6 @@
       <sourceFolder url="file://$MODULE_DIR$/dev-resources" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/resources" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/script" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/helpers" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/resources/out" />
       <excludeFolder url="file://$MODULE_DIR$/resources/public/js" />
@@ -75,7 +74,6 @@
     <orderEntry type="library" name="Leiningen: jarohen/chime:0.2.2" level="project" />
     <orderEntry type="library" name="Leiningen: joda-time:2.10" level="project" />
     <orderEntry type="library" name="Leiningen: me.raynes/fs:1.4.6" level="project" />
-    <orderEntry type="library" name="Leiningen: nano-id:0.9.3" level="project" />
     <orderEntry type="library" name="Leiningen: net.cgrand/parsley:0.9.3" level="project" />
     <orderEntry type="library" name="Leiningen: net.cgrand/regex:1.1.0" level="project" />
     <orderEntry type="library" name="Leiningen: net.cgrand/sjacket:0.1.1" level="project" />
@@ -97,6 +95,7 @@
     <orderEntry type="library" name="Leiningen: org.clojure/data.priority-map:0.0.5" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/google-closure-library-third-party:0.0-20170809-b9c14c6b" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/google-closure-library:0.0-20170809-b9c14c6b" level="project" />
+    <orderEntry type="library" name="Leiningen: org.clojure/math.combinatorics:0.1.4" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/spec.alpha:0.2.176" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/tools.analyzer.jvm:0.7.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/tools.analyzer:0.6.9" level="project" />

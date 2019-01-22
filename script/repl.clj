@@ -34,11 +34,13 @@
      :preloads             ['devtools.preload]
      :source-map-timestamp true
      :foreign-libs         [{:file           "resources/public/webpack/index_bundle.js"
-                             :provides       ["ace-editor"
+                             :provides       ["ace"
+                                              "ace-editor"
                                               "katex"
                                               "react"
                                               "react-dom"]
-                             :global-exports {'ace-editor 'AceEditor
+                             :global-exports {'ace        'ace
+                                              'ace-editor 'AceEditor
                                               'katex      'katex
                                               'react      'React
                                               'react-dom  'ReactDOM}}]
