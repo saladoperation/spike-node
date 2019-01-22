@@ -311,13 +311,14 @@
 
 (def read-file
   (partial edn/read-string
-           {:readers {'spike-node.core.Table (partial s/transform*
-                                                      s/MAP-VALS
-                                                      (partial into
-                                                               (sorted-map)))
+           {:readers {'spike-node.core.Table
+                      (partial s/transform*
+                               s/MAP-VALS
+                               (partial into
+                                        (sorted-map)))
                       'loom.graph.BasicEditableDigraph
-                                             (comp loom/digraph
-                                                   :adj)}}))
+                      (comp loom/digraph
+                            :adj)}}))
 
 (def slurp-read-file
   (comp read-file
