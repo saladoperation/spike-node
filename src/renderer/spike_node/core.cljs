@@ -590,7 +590,7 @@
                     "ace/keyboard/vim"
                     (fn [module]
                       (run! (partial apply (.-CodeMirror.Vim.map module))
-                            (combo/cartesian-product ["C-c" "jk" "kj"]
+                            (combo/cartesian-product ["jk" "kj"]
                                                      ["<Esc>"]
                                                      ["insert" "command"]))))
 
