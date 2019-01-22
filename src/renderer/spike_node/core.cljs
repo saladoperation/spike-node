@@ -54,16 +54,14 @@
        (m/<$> fs/dirname)
        (frp/stepper default-path)))
 
-(def relative-path
-  (->> submission
-       (m/<$> (partial (aid/flip str/split) #" "))
-       (core/filter (comp (partial = ":e")
-                          first))
-       (m/<$> last)))
-
-(def open
+(defn get-potential-path
+  [s]
   (->> directory
-       (frp/snapshot relative-path)
+       (frp/snapshot (->> submission
+                          (m/<$> (partial (aid/flip str/split) #" "))
+                          (core/filter (comp (partial = (str ":" s))
+                                             first))
+                          (m/<$> last)))
        (m/<$> (comp (partial apply path.join)
                     reverse))
        core/dedupe))
@@ -92,12 +90,19 @@
         slurp))
 
 (def current-file-path
-  (core/filter (aid/build or
-                          (complement fs/fexists?)
-                          (aid/build and
-                                     fs/fexists?
-                                     valid-file?))
-               open))
+  (->> "e"
+       get-potential-path
+       (core/filter (aid/build or
+                               (complement fs/fexists?)
+                               (aid/build and
+                                          fs/fexists?
+                                          valid-file?)))))
+
+(def current-directory-path
+  (->> "cd"
+       get-potential-path
+       (core/filter fs/fexists?)
+       (m/<> (m/<$> fs/dirname current-file-path))))
 
 (def opened
   (->> current-file-path
