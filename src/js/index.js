@@ -1,4 +1,4 @@
-import katex from 'katex';
+import katex from "katex";
 import React from "react";
 import AceEditor from "react-ace";
 import ReactDOM from "react-dom";
