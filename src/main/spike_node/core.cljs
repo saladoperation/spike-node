@@ -12,14 +12,9 @@
 (.on app
      "ready"
      (fn [_]
-       (let [window-state (window-state-keeper. {})
-             window (helpers/electron.BrowserWindow. window-state)]
+       (let [window-state (window-state-keeper. {})]
          (doto
-           window
-           (.webContents.on "did-finish-load"
-                            #(->> "documents"
-                                  (.getPath app)
-                                  (.webContents.send window helpers/channel)))
+           (helpers/electron.BrowserWindow. window-state)
            (.loadURL (str/join "/" ["file:/"
                                     ;TODO deal with advanced optimizations
                                     (-> js/__dirname

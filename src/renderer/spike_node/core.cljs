@@ -44,16 +44,15 @@
 (def path
   (js/require "path"))
 
-(def directory-event
-  (m/<$> fs/dirname loop-file-path))
-
 (def default-path
   (-> os
       .homedir
       (path.join "Documents")))
 
-(def directory-behavior
-  (frp/stepper default-path directory-event))
+(def directory
+  (->> loop-file-path
+       (m/<$> fs/dirname)
+       (frp/stepper default-path)))
 
 (def relative-path
   (->> submission
@@ -63,7 +62,7 @@
        (m/<$> last)))
 
 (def open
-  (->> directory-behavior
+  (->> directory
        (frp/snapshot relative-path)
        (m/<$> (comp (partial apply path.join)
                     reverse))
@@ -559,10 +558,6 @@
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
-
-(.ipcRenderer.on helpers/electron helpers/channel (comp directory-event
-                                                        last
-                                                        vector))
 
 (defn bind
   [s e]
