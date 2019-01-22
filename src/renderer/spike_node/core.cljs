@@ -282,12 +282,10 @@
              (m/<$> (fn [[y x m]]
                       (get m [x y] ""))
                     (frp/snapshot y-event x-behavior current-node))
-             (m/<$> (aid/build s/select-one*
-                               (comp (partial (aid/flip vector) :text)
-                                     s/keypath
-                                     (juxt :x :y))
-                               (comp get-current-x-y
-                                     :content))
+             (m/<$> (fn [m]
+                      (get-in (get-current-x-y (:content m))
+                              [[(:x m) (:y m)] :text]
+                              ""))
                     loop-file))
        (frp/stepper "")))
 
