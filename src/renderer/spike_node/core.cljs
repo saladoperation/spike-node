@@ -117,9 +117,11 @@
 (def y-behavior
   (get-cursor-behavior y-event))
 
+(defrecord Table
+  [x-y y-x])
+
 (def initial-table
-  {:y-x (sorted-map)
-   :x-y (sorted-map)})
+  (->Table (sorted-map) (sorted-map)))
 
 (def initial-content
   [[{:node initial-table
