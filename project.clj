@@ -12,7 +12,7 @@
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
                                   [figwheel-sidecar "0.5.18"]]}}
   ;https://github.com/cursive-ide/cursive/issues/342
-  :source-paths ["script" "src/renderer"]
+  :source-paths ["script" "src/builder" "src/renderer"]
   :cljsbuild {:builds
               {:dev {:source-paths ["src/helpers" "src/main"]
                      :compiler     {:output-to     "resources/main.js"
