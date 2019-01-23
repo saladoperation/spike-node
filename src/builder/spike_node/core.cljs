@@ -10,7 +10,8 @@
 (def config
   {:config {:directories      {:output output}
             :fileAssociations {:ext helpers/app-name}
-            :linux            {:target ["zip"]}}})
+            :linux            {:target ["zip"]}
+            :mac              {:target ["zip"]}}})
 
 (-> config
     clj->js
