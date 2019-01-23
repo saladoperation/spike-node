@@ -11,7 +11,8 @@
             [lein-cljsbuild "1.1.7"]]
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
                                   [figwheel-sidecar "0.5.18"]]}}
-  :source-paths ["script" "src/helpers" "src/main" "src/renderer"]
+  ;https://github.com/cursive-ide/cursive/issues/342
+  :source-paths ["script" "src/renderer"]
   :cljsbuild {:builds
               {:dev {:source-paths ["src/helpers" "src/main"]
                      :compiler     {:output-to     "resources/main.js"
