@@ -25,8 +25,14 @@
 (def renderer-output-dir
   (get-resources "public" asset-path))
 
+(def builder
+  "builder")
+
 (def main
-  (= argument "main"))
+  "main")
+
+(def renderer
+  "renderer")
 
 (def compiler
   (merge
@@ -45,14 +51,16 @@
                                               'react      'React
                                               'react-dom  'ReactDOM}}]
      :external-config      {:devtools/config {:features-to-install :all}}}
-    (if main
-      {:output-to (get-resources entry)
-       :target    :nodejs}
-      {:output-to  (-> renderer-output-dir
-                       fs/parent
-                       (get-path entry))
-       :output-dir renderer-output-dir
-       :asset-path asset-path})))
+    ({builder  {:output-to (get-path "target" entry)
+                :target    :nodejs}
+      main     {:output-to (get-resources entry)
+                :target    :nodejs}
+      renderer {:output-to  (-> renderer-output-dir
+                                fs/parent
+                                (get-path entry))
+                :output-dir renderer-output-dir
+                :asset-path asset-path}}
+      argument)))
 
 (def build
   {:id           id
@@ -62,8 +70,9 @@
 
 (repl-api/start-figwheel! {:all-builds       [build]
                            :build-ids        [id]
-                           :figwheel-options (if main
-                                               {}
-                                               {:server-port 3450})})
+                           :figwheel-options ({builder  {}
+                                               main     {:server-port 3450}
+                                               renderer {:server-port 3451}}
+                                               argument)})
 
 (repl-api/cljs-repl)
