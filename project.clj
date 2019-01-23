@@ -11,7 +11,7 @@
             [lein-cljsbuild "1.1.7"]]
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
                                   [figwheel-sidecar "0.5.18"]]}}
-  :source-paths ["src/helpers" "src/main" "src/renderer"]
+  :source-paths ["script" "src/helpers" "src/main" "src/renderer"]
   :cljsbuild {:builds
               {:dev {:source-paths ["src/helpers" "src/main"]
                      :compiler     {:output-to     "resources/main.js"
