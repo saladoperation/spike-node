@@ -72,6 +72,7 @@
   [s]
   (->> directory-behavior
        (frp/snapshot (->> submission
+                          ;TODO use parser combinator
                           (m/<$> (partial (aid/flip str/split) #" "))
                           (core/filter (comp (partial = (str ":" s))
                                              first))
