@@ -39,6 +39,7 @@
     {:main                 "spike-node.core"
      :preloads             ['devtools.preload]
      :source-map-timestamp true
+     ;TODO use npm-deps when npm-deps becomes stable
      :foreign-libs         [{:file           "resources/public/webpack/index_bundle.js"
                              :provides       ["ace"
                                               "ace-editor"
