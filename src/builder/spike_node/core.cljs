@@ -12,4 +12,6 @@
             :fileAssociations {:ext helpers/app-name}
             :linux            {:target ["zip"]}}})
 
-(builder.build (clj->js config))
+(-> config
+    clj->js
+    builder.build)
