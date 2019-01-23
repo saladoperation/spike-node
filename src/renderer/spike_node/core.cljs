@@ -48,7 +48,7 @@
   (.homedir os))
 
 (def config-path
-  (path.join home ".spike-noderc"))
+  (path.join home (str "." helpers/app-name "rc")))
 
 (def config-commands
   (aid/casep config-path
