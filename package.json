@@ -1,4 +1,6 @@
 {
+  "name": "spike-node",
+  "version": "0.1.0",
   "main": "resources/main.js",
   "devDependencies": {
     "css-loader": "2.1.0",

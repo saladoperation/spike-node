@@ -7,5 +7,7 @@
   (js/require "electron-builder"))
 
 (def config
-  {:linux {:directories {:output output}
-           :target      ["deb"]}})
+  {:config {:directories {:output output}
+            :linux       {:target ["zip"]}}})
+
+(builder.build (clj->js config))
