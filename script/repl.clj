@@ -59,7 +59,6 @@
       renderer {:output-to  (-> renderer-output-dir
                                 fs/parent
                                 (get-path entry))
-                :output-dir renderer-output-dir
                 :asset-path asset-path}}
       argument)))
 
