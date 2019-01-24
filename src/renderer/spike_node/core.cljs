@@ -232,12 +232,11 @@
 (def undo-size
   10)
 
-(defn get-error
-  [s]
-  (try (do (js/katex.renderToString s)
-           "")
-       (catch js/katex.ParseError error
-         (str error))))
+(def get-error
+  #(try (do (js/katex.renderToString %)
+            "")
+        (catch js/katex.ParseError error
+          (str error))))
 
 (def valid-expression?
   (comp empty?
