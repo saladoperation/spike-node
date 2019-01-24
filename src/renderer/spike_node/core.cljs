@@ -16,8 +16,9 @@
             [katex]
             [loom.graph :as graph]
             [reagent.core :as r]
+            [spike-node.helpers :as helpers]
             [spike-node.loom :as loom]
-            [spike-node.helpers :as helpers]))
+            [spike-node.parse.core :as parse]))
 
 (frp/defe loop-file
           loop-file-path
@@ -59,6 +60,37 @@
                      (map (partial str ":")))
     []))
 
+(def token
+  (->> (m/<> (parse/not= \ )
+             ((aid/lift-a vector)
+               (parse/= \\)
+               (parse/= \ )))
+       parse/some
+       (m/<$> (partial apply str))))
+
+(def delimiter
+  (parse/some (parse/= \ )))
+
+(def argument
+  ((aid/lift-a (comp last
+                     vector))
+    delimiter
+    token))
+
+(def start
+  ((aid/lift-a (partial apply str))
+    (parse/= \:)
+    token))
+
+(def command-parser
+  (->> argument
+       parse/many
+       ((aid/lift-a cons) start)))
+
+(def parse-command
+  (comp first
+        (partial parse/parse command-parser)))
+
 (def default-path
   (path.join home "Documents"))
 
@@ -68,21 +100,25 @@
 (def directory-behavior
   (frp/stepper default-path loop-directory-event))
 
-(defn get-potential-path
-  [s]
-  (->> directory-behavior
-       (frp/snapshot (->> submission
-                          ;TODO use parser combinator
-                          (m/<$> (partial (aid/flip str/split) #" "))
-                          (core/filter (comp (partial = (str ":" s))
-                                             first))
-                          (m/<$> last)))
-       (m/<$> (comp (aid/if-then-else (comp fs/absolute?
-                                            last)
-                                      last
-                                      (partial apply path.join))
-                    reverse))
-       core/dedupe))
+(def get-potential-path
+  #(->>
+     directory-behavior
+     (frp/snapshot
+       (->> submission
+            (m/<$> parse-command)
+            (core/filter (aid/build and
+                                    (comp (partial = 2)
+                                          count)
+                                    (comp (partial (aid/flip str/starts-with?)
+                                                   (str ":" %))
+                                          first)))
+            (m/<$> second)))
+     (m/<$> (comp (aid/if-then-else (comp fs/absolute?
+                                          last)
+                                    last
+                                    (partial apply path.join))
+                  reverse))
+     core/dedupe))
 
 (def read-file
   (partial edn/read-string
