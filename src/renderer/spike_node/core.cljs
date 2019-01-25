@@ -381,10 +381,8 @@
   (frp/snapshot (->> current-file-path
                      (core/partition 2 1)
                      (m/<$> first))
-                ((aid/lift-a (fn [content* x y]
-                               {:content content*
-                                :x       x
-                                :y       y}))
+                ((aid/lift-a (comp (partial zipmap [:content :x :y])
+                                   vector))
                   (frp/stepper initial-content content)
                   x-behavior
                   y-behavior)))
