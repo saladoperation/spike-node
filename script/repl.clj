@@ -1,7 +1,7 @@
 (ns repl
-  (:require [clojure.string :as str]
-            [figwheel-sidecar.repl-api :as repl-api]
-            [me.raynes.fs :as fs]))
+  (:require [figwheel-sidecar.repl-api :as repl-api]
+            [me.raynes.fs :as fs]
+            [spike-node.helpers :as helpers]))
 
 (def argument
   (first *command-line-args*))
@@ -15,15 +15,11 @@
 (def asset-path
   "js/out")
 
-(def get-path
-  (comp (partial str/join "/")
-        vector))
-
 (def get-resources
-  (partial get-path "resources"))
+  (partial helpers/get-path helpers/resources))
 
 (def get-public
-  (partial get-resources "public"))
+  (partial get-resources helpers/public))
 
 (def renderer-output-dir
   (get-public asset-path))
@@ -55,19 +51,19 @@
                                               'react      'React
                                               'react-dom  'ReactDOM}}]
      :external-config      {:devtools/config {:features-to-install :all}}}
-    ({builder  {:output-to (get-path "target" entry)
+    ({builder  {:output-to (helpers/get-path "target" entry)
                 :target    :nodejs}
       main     {:output-to (get-resources entry)
                 :target    :nodejs}
       renderer {:output-to  (-> renderer-output-dir
                                 fs/parent
-                                (get-path entry))
+                                (helpers/get-path entry))
                 :asset-path asset-path}}
       argument)))
 
 (def build
   {:id           id
-   :source-paths (map (partial get-path "src") [argument "helpers"])
+   :source-paths (map (partial helpers/get-path "src") [argument "helpers"])
    :compiler     compiler
    :figwheel     true})
 

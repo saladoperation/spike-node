@@ -31,14 +31,16 @@
                                                            %)
                                        file-path)
                               (frp/activate)))
-           ;TODO use get-public
-           (.loadURL (->> "public/index.html"
-                          (path.join (aid/if-else (comp (partial = "resources")
-                                                        fs/basename)
-                                                  (comp fs/dirname
-                                                        fs/dirname)
-                                                  js/__dirname))
-                          (str "file://")))
+           (.loadURL
+             (->> "index.html"
+                  (helpers/get-path helpers/public)
+                  (path.join (aid/if-else (comp (partial =
+                                                         helpers/resources)
+                                                fs/basename)
+                                          (comp fs/dirname
+                                                fs/dirname)
+                                          js/__dirname))
+                  (str "file://")))
            window-state.manage))))
 
 (.on app "will-finish-launching" #(.on app "open-file" (comp file-path
