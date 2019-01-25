@@ -2,3 +2,6 @@
 
 (def app-name
   "spike-node")
+
+(def electron
+  (js/require "electron"))

@@ -143,9 +143,11 @@
   (comp edn?
         slurp))
 
+(def potential-file-path
+  (get-potential-path "e"))
+
 (def current-file-path
-  (->> "e"
-       get-potential-path
+  (->> potential-file-path
        (core/filter (aid/build or
                                (complement fs/fexists?)
                                (aid/build and
@@ -655,3 +657,7 @@
 (run! submission config-commands)
 
 (frp/run (partial apply spit) modification)
+
+(.ipcRenderer.on helpers/electron "channel" (comp potential-file-path
+                                                  last
+                                                  vector))

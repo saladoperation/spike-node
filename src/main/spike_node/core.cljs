@@ -1,9 +1,8 @@
 (ns spike-node.core
   (:require [aid.core :as aid]
-            [cljs-node-io.fs :as fs]))
-
-(def electron
-  (js/require "electron"))
+            [cljs-node-io.fs :as fs]
+            [frp.core :as frp]
+            [spike-node.helpers :as helpers]))
 
 (def path
   (js/require "path"))
@@ -11,15 +10,27 @@
 (def window-state-keeper
   (js/require "electron-window-state"))
 
+(frp/defe file-path)
+
 (def app
-  (.-app electron))
+  (.-app helpers/electron))
 
 (.on app
      "ready"
      (fn [_]
-       (let [window-state (window-state-keeper. {})]
+       (let [window-state (window-state-keeper. {})
+             window (helpers/electron.BrowserWindow. window-state)]
          (doto
-           (electron.BrowserWindow. window-state)
+           window
+           (.on "close" (fn [event*]
+                          (.preventDefault event*)
+                          (.hide window)))
+           (.webContents.on "did-finish-load"
+                            (fn []
+                              (frp/run #(.webContents.send window "channel" %)
+                                       file-path)
+                              (frp/activate)))
+           ;TODO use get-public
            (.loadURL (->> "public/index.html"
                           (path.join (aid/if-else (comp (partial = "resources")
                                                         fs/basename)
@@ -28,3 +39,8 @@
                                                   js/__dirname))
                           (str "file://")))
            window-state.manage))))
+
+(.on app "will-finish-launching" #(.on app "open-file" (comp file-path
+                                                             last
+                                                             vector)))
+
