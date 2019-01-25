@@ -22,9 +22,8 @@
              window (helpers/electron.BrowserWindow. window-state)]
          (doto
            window
-           (.on "close" (fn [event*]
-                          (.preventDefault event*)
-                          (.hide window)))
+           (.on "close" (fn [_]
+                          (.quit app)))
            (.webContents.on "did-finish-load"
                             (fn []
                               (frp/run #(.webContents.send window "channel" %)
