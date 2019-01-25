@@ -340,10 +340,9 @@
              (m/<$> (fn [[y x m]]
                       (get m [x y] ""))
                     (frp/snapshot y-event x-behavior current-node))
-             (m/<$> (fn [m]
-                      (get-in (get-current-x-y (:content m))
-                              [[(:x m) (:y m)] :text]
-                              ""))
+             (m/<$> #(get-in (get-current-x-y (:content %))
+                             [[(:x %) (:y %)] :text]
+                             "")
                     loop-file))
        (frp/stepper "")))
 
@@ -646,11 +645,10 @@
 
 (.config.loadModule ace
                     "ace/keyboard/vim"
-                    (fn [module]
-                      (run! (partial apply (.-CodeMirror.Vim.map module))
-                            (combo/cartesian-product ["jk" "kj"]
-                                                     ["<Esc>"]
-                                                     ["insert" "command"]))))
+                    #(run! (partial apply (.-CodeMirror.Vim.map %))
+                           (combo/cartesian-product ["jk" "kj"]
+                                                    ["<Esc>"]
+                                                    ["insert" "command"])))
 
 (frp/activate)
 

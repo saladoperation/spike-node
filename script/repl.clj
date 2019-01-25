@@ -22,8 +22,11 @@
 (def get-resources
   (partial get-path "resources"))
 
+(def get-public
+  (partial get-resources "public"))
+
 (def renderer-output-dir
-  (get-resources "public" asset-path))
+  (get-public asset-path))
 
 (def builder
   "builder")
@@ -40,7 +43,7 @@
      :preloads             ['devtools.preload]
      :source-map-timestamp true
      ;TODO use npm-deps when npm-deps becomes stable
-     :foreign-libs         [{:file           "resources/public/webpack/index_bundle.js"
+     :foreign-libs         [{:file           (get-public "webpack/index_bundle.js")
                              :provides       ["ace"
                                               "ace-editor"
                                               "katex"
