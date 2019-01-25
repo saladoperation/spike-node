@@ -26,7 +26,9 @@
                           (.quit app)))
            (.webContents.on "did-finish-load"
                             (fn []
-                              (frp/run #(.webContents.send window "channel" %)
+                              (frp/run #(.webContents.send window
+                                                           helpers/channel
+                                                           %)
                                        file-path)
                               (frp/activate)))
            ;TODO use get-public

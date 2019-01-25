@@ -5,3 +5,6 @@
 
 (def electron
   (js/require "electron"))
+
+(def channel
+  "channel")
