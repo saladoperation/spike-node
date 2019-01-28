@@ -146,12 +146,12 @@
   (get-potential-path "e"))
 
 (def current-file-path
-  (->> potential-file-path
-       (core/filter (aid/build or
-                               (complement fs/fexists?)
-                               (aid/build and
-                                          fs/fexists?
-                                          valid-file?)))))
+  (core/filter (aid/build or
+                          (complement fs/fexists?)
+                          (aid/build and
+                                     fs/fexists?
+                                     valid-file?))
+               potential-file-path))
 
 (def current-directory-path
   (->> "cd"
