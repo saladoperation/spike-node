@@ -39,7 +39,7 @@
      :preloads             ['devtools.preload]
      :source-map-timestamp true
      ;TODO use npm-deps when npm-deps becomes stable
-     :foreign-libs         [{:file           (get-public "webpack/index_bundle.js")
+     :foreign-libs         [{:file           (get-public "js/index_bundle.js")
                              :provides       ["ace"
                                               "ace-editor"
                                               "katex"

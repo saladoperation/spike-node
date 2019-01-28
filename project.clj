@@ -13,7 +13,12 @@
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
                                   [figwheel-sidecar "0.5.18"]]}}
   :cljsbuild {:builds
-              {:dev {:source-paths ["src/helpers" "src/main"]
-                     :compiler     {:output-to     "resources/main.js"
-                                    :optimizations :simple
-                                    :main          spike-node.core}}}})
+              {:main-dev  {:source-paths ["src/helpers" "src/main"]
+                           :compiler     {:output-to     "resources/main.js"
+                                          :optimizations :simple
+                                          :main          spike-node.core}}
+               :main-prod {:source-paths ["src/helpers" "src/main"]
+                           :compiler     {:output-to       "resources/main.js"
+                                          :optimizations   :simple
+                                          :main            spike-node.core
+                                          :closure-defines {goog.DEBUG false}}}}})

@@ -123,4 +123,3 @@ figwheel_server.log
 resources/out
 resources/main.js
 resources/public/js
-resources/public/webpack

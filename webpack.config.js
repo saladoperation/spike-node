@@ -1,5 +1,7 @@
 path = require("path");
 
+js = "js";
+
 module.exports = {
     entry: "./src/js/index.js",
     module: {
@@ -15,8 +17,8 @@ module.exports = {
         ]
     },
     output: {
-        path: path.resolve(__dirname, "resources/public/webpack"),
+        path: path.resolve(__dirname, "resources/public", js),
         filename: "index_bundle.js",
-        publicPath: "webpack/"
+        publicPath: js
     }
 };
