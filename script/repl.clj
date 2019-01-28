@@ -12,17 +12,14 @@
 (def entry
   "main.js")
 
-(def asset-path
-  "js/out")
-
 (def get-resources
   (partial helpers/get-path helpers/resources))
 
-(def get-public
-  (partial get-resources helpers/public))
+(def js-directory
+  "js")
 
-(def renderer-output-dir
-  (get-public asset-path))
+(def get-js
+  (partial get-resources helpers/public js-directory))
 
 (def builder
   "builder")
@@ -39,7 +36,7 @@
      :preloads             ['devtools.preload]
      :source-map-timestamp true
      ;TODO use npm-deps when npm-deps becomes stable
-     :foreign-libs         [{:file           (get-public "js/index_bundle.js")
+     :foreign-libs         [{:file           (get-js "index_bundle.js")
                              :provides       ["ace"
                                               "ace-editor"
                                               "katex"
@@ -55,10 +52,8 @@
                 :target    :nodejs}
       main     {:output-to (get-resources entry)
                 :target    :nodejs}
-      renderer {:output-to  (-> renderer-output-dir
-                                fs/parent
-                                (helpers/get-path entry))
-                :asset-path asset-path}}
+      renderer {:output-to  (get-js entry)
+                :asset-path (helpers/get-path js-directory "out")}}
       argument)))
 
 (def build
