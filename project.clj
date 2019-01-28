@@ -21,4 +21,20 @@
                            :compiler     {:output-to       "resources/main.js"
                                           :optimizations   :simple
                                           :main            spike-node.core
+                                          :closure-defines {goog.DEBUG false}}}
+               :renderer  {:source-paths ["src/helpers" "src/renderer"]
+                           :compiler     {:output-to       "resources/public/js/main.js"
+                                          :optimizations   :simple
+                                          :main            spike-node.core
+                                          :foreign-libs    [{:file           "resources/public/js/index_bundle.js"
+                                                             :provides       ["ace"
+                                                                              "ace-editor"
+                                                                              "katex"
+                                                                              "react"
+                                                                              "react-dom"]
+                                                             :global-exports {ace        ace
+                                                                              ace-editor AceEditor
+                                                                              katex      katex
+                                                                              react      React
+                                                                              react-dom  ReactDOM}}]
                                           :closure-defines {goog.DEBUG false}}}}})

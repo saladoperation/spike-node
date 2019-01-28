@@ -1,6 +1,6 @@
 path = require("path");
 
-js = "js";
+js = "js/";
 
 module.exports = {
     entry: "./src/js/index.js",
