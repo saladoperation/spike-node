@@ -12,7 +12,6 @@
             [com.rpl.specter :as s]
             [frp.clojure.core :as core]
             [frp.core :as frp]
-            [frp.window :as window]
             [katex]
             [loom.graph :as graph]
             [reagent.core :as r]
@@ -614,10 +613,6 @@
 (loop-event {loop-directory-event current-directory-path
              loop-file-path       current-file-path
              loop-file            current-file})
-
-(frp/run (comp aid/funcall
-               :prevent-default)
-         window/submit)
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
