@@ -409,7 +409,9 @@
 (def current-file
   (m/<$> (fn [[k m]]
            (get m k (aid/casep k
-                      fs/fexists? (read-file (slurp k))
+                      fs/fexists? (-> k
+                                      slurp
+                                      read-file)
                       initial-file)))
          (frp/snapshot current-file-path file)))
 
