@@ -329,9 +329,7 @@
                 (partial s/setval* (s/keypath [x y]) s)))
        (m/<> (m/<$> (comp constantly
                           (partial s/transform* s/MAP-VALS :text)
-                          :x-y
-                          :node
-                          ffirst)
+                          get-current-x-y)
                     content))
        (frp/accum {})
        (frp/stepper {})))
