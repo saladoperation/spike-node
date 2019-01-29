@@ -308,9 +308,12 @@
                                                               s/BEFORE-ELEM]
                                                              ffirst)))
                            undo)
-                   (aid/<$ (comp (partial s/transform* s/LAST rest)
-                                 (aid/transfer* [s/FIRST s/BEFORE-ELEM]
-                                                lfirst))
+                   (aid/<$ (aid/if-then (comp not-empty
+                                              last)
+                                        (comp (partial s/transform* s/LAST rest)
+                                              (aid/transfer* [s/FIRST
+                                                              s/BEFORE-ELEM]
+                                                             lfirst)))
                            redo))))
 
 (def get-current-x-y
