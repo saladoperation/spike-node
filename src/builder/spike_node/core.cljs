@@ -1,21 +1,31 @@
 (ns spike-node.core
-  (:require [spike-node.helpers :as helpers]))
-
-(def output
-  (last js/process.argv))
+  (:require [cljs-node-io.fs :as fs]
+            [spike-node.helpers :as helpers]))
 
 (def builder
   (js/require "electron-builder"))
 
-(def platform
-  {:target ["zip"]})
+(def output
+  (if (-> js/process.argv
+          last
+          fs/file?)
+    "dist"
+    (last js/process.argv)))
+
+(def target
+  ["zip"])
 
 (def config
-  {:config {:directories      {:output output}
-            :fileAssociations {:ext helpers/app-name}
-            :linux            platform
-            :mac              platform}})
+  {:config  {:directories      {:output output}
+             :fileAssociations {:ext helpers/app-name}}
+   :linux   target
+   :mac     target
+   :publish "always"})
 
 (-> config
     clj->js
-    builder.build)
+    builder.build
+    (.then #(js/process.exit))
+    (.catch (fn [e]
+              (println e)
+              (js/process.exit 1))))

@@ -1,11 +1,11 @@
 (ns spike-node.helpers
   (:require [clojure.string :as str]))
 
-(def app-name
-  "spike-node")
-
 #?(:cljs (def electron
            (js/require "electron")))
+
+(def app-name
+  "spike-node")
 
 (def channel
   "channel")
