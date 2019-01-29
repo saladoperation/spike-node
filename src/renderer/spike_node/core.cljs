@@ -353,20 +353,22 @@
        (frp/stepper "")))
 
 (defn get-maximum
-  [k]
-  (m/<$> (comp #(case %
-                  {} 0
-                  (-> %
-                      lfirst
-                      first))
-               k)
-         current-node))
+  [k b]
+  (->> current-node
+       (m/<$> (comp #(case %
+                       {} 0
+                       (-> %
+                           lfirst
+                           first))
+                    k))
+       (frp/stepper 0)
+       ((aid/lift-a max) b)))
 
 (def maximum-x
-  (get-maximum :x-y))
+  (get-maximum :x-y x-behavior))
 
 (def maximum-y
-  (get-maximum :y-x))
+  (get-maximum :y-x y-behavior))
 
 (def error
   (m/<$> get-error insert-text))
