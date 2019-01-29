@@ -179,21 +179,21 @@
 (def get-cursor-behavior
   (partial frp/stepper initial-cursor))
 
-(def x-event
+(def cursor-x-event
   (->> loop-file
        (m/<$> :x)
        (get-cursor-event right left)))
 
-(def y-event
+(def cursor-y-event
   (->> loop-file
        (m/<$> :y)
        (get-cursor-event down up)))
 
-(def x-behavior
-  (get-cursor-behavior x-event))
+(def cursor-x-behavior
+  (get-cursor-behavior cursor-x-event))
 
-(def y-behavior
-  (get-cursor-behavior y-event))
+(def cursor-y-behavior
+  (get-cursor-behavior cursor-y-event))
 
 (defrecord Table
   [x-y y-x])
@@ -247,7 +247,7 @@
   (core/filter valid-expression? insert-typing))
 
 (def typed
-  (->> (m/<> x-event y-event)
+  (->> (m/<> cursor-x-event cursor-y-event)
        (aid/<$ false)
        (m/<> (aid/<$ true valid))
        (frp/stepper false)))
@@ -268,7 +268,7 @@
 (def action
   (->> valid
        (frp/stepper "")
-       (frp/snapshot normal x-behavior y-behavior typed)
+       (frp/snapshot normal cursor-x-behavior cursor-y-behavior typed)
        (m/<$>
          (fn [[_ x y typed* s]]
            (aid/if-else
@@ -325,8 +325,8 @@
 
 (def current-x-y*
   (->> (frp/snapshot valid
-                     x-behavior
-                     y-behavior)
+                     cursor-x-behavior
+                     cursor-y-behavior)
        (m/<$> (fn [[s x y]]
                 (partial s/setval* (s/keypath [x y]) s)))
        (m/<> (m/<$> (comp constantly
@@ -340,10 +340,10 @@
   (->> insert-typing
        (m/<> (m/<$> (fn [[x y m]]
                       (get m [x y] ""))
-                    (frp/snapshot x-event y-behavior current-x-y*))
+                    (frp/snapshot cursor-x-event cursor-y-behavior current-x-y*))
              (m/<$> (fn [[y x m]]
                       (get m [x y] ""))
-                    (frp/snapshot y-event x-behavior current-x-y*))
+                    (frp/snapshot cursor-y-event cursor-x-behavior current-x-y*))
              (m/<$> #(-> %
                          :content
                          get-current-node*
@@ -362,13 +362,15 @@
                            first))
                     k))
        (frp/stepper 0)
-       ((aid/lift-a max) b)))
+       ((aid/lift-a (comp inc
+                          max))
+         b)))
 
 (def maximum-x
-  (get-maximum :x-y x-behavior))
+  (get-maximum :x-y cursor-x-behavior))
 
 (def maximum-y
-  (get-maximum :y-x y-behavior))
+  (get-maximum :y-x cursor-y-behavior))
 
 (def error
   (m/<$> get-error insert-text))
@@ -406,8 +408,8 @@
                 ((aid/lift-a (comp (partial zipmap [:content :x :y])
                                    vector))
                   (frp/stepper initial-content content)
-                  x-behavior
-                  y-behavior)))
+                  cursor-x-behavior
+                  cursor-y-behavior)))
 
 (def file
   (->> file-entry
@@ -571,18 +573,21 @@
    [input-component command-text*]])
 
 (defn graph-component
-  [current-x-y* x y]
-  (s/setval s/END
-            (mapv (comp vec
-                        (partial cons math-node))
-                  current-x-y*)
-            [:svg {:style {:height "100%"
-                           :width  "100%"}}
-             [:rect {:height cursor-size
-                     :stroke "red"
-                     :width  cursor-size
-                     :x      (* x cursor-size)
-                     :y      (* y cursor-size)}]]))
+  [current-x-y* maximum-x maximum-y cursor-x cursor-y]
+  [:div {:style {:overflow "auto"
+                 :height   "100%"
+                 :width    "100%"}}
+   (s/setval s/END
+             (mapv (comp vec
+                         (partial cons math-node))
+                   current-x-y*)
+             [:svg {:style {:height (* maximum-y cursor-size)
+                            :width  (* maximum-x cursor-size)}}
+              [:rect {:height cursor-size
+                      :stroke "red"
+                      :width  cursor-size
+                      :x      (* cursor-x cursor-size)
+                      :y      (* cursor-y cursor-size)}]])])
 
 (defn error-component
   [error* editor-command*]
@@ -612,7 +617,12 @@
               [command-view*])))
 
 (def graph-view
-  ((aid/lift-a graph-component) current-x-y* x-behavior y-behavior))
+  ((aid/lift-a graph-component)
+    current-x-y*
+    maximum-x
+    maximum-y
+    cursor-x-behavior
+    cursor-y-behavior))
 
 (def command-view
   ((aid/lift-a command-component) mode command-text))
