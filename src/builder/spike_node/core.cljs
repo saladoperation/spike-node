@@ -24,4 +24,8 @@
 
 (-> config
     clj->js
-    builder.build)
+    builder.build
+    (.then #(js/process.exit))
+    (.catch (fn [e]
+              (println e)
+              (js/process.exit 1))))
