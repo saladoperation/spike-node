@@ -10,6 +10,7 @@ lein install &&
 cd .. &&
 lein cljsbuild once builder &&
 lein cljsbuild once main-prod &&
+yarn install &&
 yarn webpack &&
 lein cljsbuild once renderer
 node target/main.js
