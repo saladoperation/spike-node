@@ -14,8 +14,9 @@
                                   [figwheel-sidecar "0.5.18"]]}}
   :cljsbuild {:builds
               {:builder   {:source-paths ["src/builder" "src/helpers"]
-                           :compiler     {:output-to     "target/main.js"
-                                          :main          spike-node.core}}
+                           :compiler     {:output-to "target/main.js"
+                                          :main      spike-node.core
+                                          :target    :nodejs}}
                :main-dev  {:source-paths ["src/helpers" "src/main"]
                            :compiler     {:output-to     "resources/main.js"
                                           :optimizations :simple
