@@ -316,12 +316,12 @@
                                                              lfirst)))
                            redo))))
 
-(def get-current-x-y
+(def get-current-x-y*
   (comp :x-y
         :node
         ffirst))
 
-(def current-node
+(def current-x-y*
   (->> (frp/snapshot valid
                      x-behavior
                      y-behavior)
@@ -329,7 +329,7 @@
                 (partial s/setval* (s/keypath [x y]) s)))
        (m/<> (m/<$> (comp constantly
                           (partial s/transform* s/MAP-VALS :text)
-                          get-current-x-y)
+                          get-current-x-y*)
                     content))
        (frp/accum {})
        (frp/stepper {})))
@@ -338,11 +338,11 @@
   (->> insert-typing
        (m/<> (m/<$> (fn [[x y m]]
                       (get m [x y] ""))
-                    (frp/snapshot x-event y-behavior current-node))
+                    (frp/snapshot x-event y-behavior current-x-y*))
              (m/<$> (fn [[y x m]]
                       (get m [x y] ""))
-                    (frp/snapshot y-event x-behavior current-node))
-             (m/<$> #(get-in (get-current-x-y (:content %))
+                    (frp/snapshot y-event x-behavior current-x-y*))
+             (m/<$> #(get-in (get-current-x-y* (:content %))
                              [[(:x %) (:y %)] :text]
                              "")
                     loop-file))
@@ -549,11 +549,11 @@
    [input-component command-text*]])
 
 (defn graph-component
-  [current-node* x y]
+  [current-x-y* x y]
   (s/setval s/END
             (mapv (comp vec
                         (partial cons math-node))
-                  current-node*)
+                  current-x-y*)
             [:svg {:style {:height "100%"
                            :width  "100%"}}
              [:rect {:height cursor-size
@@ -590,7 +590,7 @@
               [command-view*])))
 
 (def graph-view
-  ((aid/lift-a graph-component) current-node x-behavior y-behavior))
+  ((aid/lift-a graph-component) current-x-y* x-behavior y-behavior))
 
 (def command-view
   ((aid/lift-a command-component) mode command-text))
