@@ -7,14 +7,14 @@
 (def builder
   (js/require "electron-builder"))
 
-(def platform
-  {:target ["zip"]})
+(def target
+  ["zip"])
 
 (def config
   {:config {:directories      {:output output}
-            :fileAssociations {:ext helpers/app-name}
-            :linux            platform
-            :mac              platform}})
+            :fileAssociations {:ext helpers/app-name}}
+   :linux  target
+   :mac    target})
 
 (-> config
     clj->js
