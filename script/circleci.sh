@@ -8,5 +8,7 @@ git clone -b develop https://github.com/schlepfilter/frp &&
 cd frp &&
 lein install &&
 cd .. &&
+lein cljsbuild once builder &&
 lein cljsbuild once main-prod &&
 lein cljsbuild once renderer
+node target/main.js
