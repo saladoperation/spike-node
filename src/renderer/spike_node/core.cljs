@@ -316,10 +316,12 @@
                                                              lfirst)))
                            redo))))
 
-(def get-current-x-y*
-  (comp :x-y
-        :node
+(def get-current-node*
+  (comp :node
         ffirst))
+
+(def current-node
+  (m/<$> get-current-node* content))
 
 (def current-x-y*
   (->> (frp/snapshot valid
@@ -329,8 +331,8 @@
                 (partial s/setval* (s/keypath [x y]) s)))
        (m/<> (m/<$> (comp constantly
                           (partial s/transform* s/MAP-VALS :text)
-                          get-current-x-y*)
-                    content))
+                          :x-y)
+                    current-node))
        (frp/accum {})
        (frp/stepper {})))
 
@@ -342,11 +344,29 @@
              (m/<$> (fn [[y x m]]
                       (get m [x y] ""))
                     (frp/snapshot y-event x-behavior current-x-y*))
-             (m/<$> #(get-in (get-current-x-y* (:content %))
-                             [[(:x %) (:y %)] :text]
-                             "")
+             (m/<$> #(-> %
+                         :content
+                         get-current-node*
+                         :x-y
+                         (get-in [[(:x %) (:y %)] :text] ""))
                     loop-file))
        (frp/stepper "")))
+
+(defn get-maximum
+  [k]
+  (m/<$> (comp #(case %
+                  {} 0
+                  (-> %
+                      lfirst
+                      first))
+               k)
+         current-node))
+
+(def maximum-x
+  (get-maximum :x-y))
+
+(def maximum-y
+  (get-maximum :y-x))
 
 (def error
   (m/<$> get-error insert-text))
