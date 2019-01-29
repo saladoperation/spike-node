@@ -5,6 +5,8 @@ cd aid &&
 lein install &&
 cd .. &&
 git clone -b develop https://github.com/schlepfilter/frp &&
-cd aid &&
+cd frp &&
 lein install &&
-cd ..
+cd .. &&
+lein cljsbuild once main-prod &&
+lein cljsbuild once renderer
