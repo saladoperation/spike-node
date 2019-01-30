@@ -15,6 +15,7 @@
             [frp.core :as frp]
             [goog.object :as object]
             katex
+            measure
             [loom.graph :as graph]
             [oops.core :refer [oget+]]
             [reagent.core :as r]
