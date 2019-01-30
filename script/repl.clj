@@ -40,13 +40,11 @@
                              :provides       ["ace"
                                               "ace-editor"
                                               "katex"
-                                              "measure"
                                               "react"
                                               "react-dom"]
                              :global-exports {'ace        'ace
                                               'ace-editor 'AceEditor
                                               'katex      'katex
-                                              'measure    'Measure
                                               'react      'React
                                               'react-dom  'ReactDOM}}]
      :external-config      {:devtools/config {:features-to-install :all}}}
