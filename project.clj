@@ -9,7 +9,7 @@
                  [reagent "0.8.1" :exclusions [cljsjs/react]]]
   :plugins [[lein-ancient "0.6.15"]
             [lein-cljsbuild "1.1.7"]]
-  :source-paths ["src/helpers"]
+  :source-paths ["src/helpers" "src/renderer"]
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
                                   [figwheel-sidecar "0.5.18"]]}}
   :cljsbuild {:builds
