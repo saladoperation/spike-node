@@ -2,7 +2,7 @@
 
 (defmacro c
   [& more]
-  `(memoize-one (partial vector (fn ~@more))))
+  `(partial vector (memoize-one (fn ~@more))))
 
 (defmacro defc
   [function-name & more]
