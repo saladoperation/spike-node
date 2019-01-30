@@ -40,6 +40,7 @@
           command-keydown
           insert-typing
           command-typing
+          bounds
           submission
           undo
           redo)
@@ -568,9 +569,16 @@
 
 (defn math-node
   [[[x y] s]]
-  [:foreignObject {:x (* x cursor-size)
-                   :y (* y cursor-size)}
-   [math (align s)]])
+  [:> measure
+   {:bounds    true
+    :on-resize #(-> %
+                    .-bounds
+                    bounds)}
+   #(r/as-element [:foreignObject {:x (* x cursor-size)
+                                   :y (* y cursor-size)}
+                   [:div {:ref   (.-measureRef %)
+                          :style {:display "inline-block"}}
+                    [math (align s)]]])])
 
 (def background-color
   "black")
