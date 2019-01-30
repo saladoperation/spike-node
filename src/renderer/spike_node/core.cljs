@@ -556,12 +556,12 @@
                :theme            "terminal"
                :value            text*}])})))
 
-(defc math
-      [s]
-      [:div
-       {:dangerouslySetInnerHTML
-        {:__html (js/katex.renderToString s
-                                          #js {:displayMode true})}}])
+(defn math
+  [s]
+  [:div
+   {:dangerouslySetInnerHTML
+    {:__html (js/katex.renderToString s
+                                      #js {:displayMode true})}}])
 
 (def align
   (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
