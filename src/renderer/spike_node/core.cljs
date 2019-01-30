@@ -649,6 +649,14 @@
         convert-object
         r/dom-node))
 
+(defc nodes
+      [current-x-y*]
+      (->> current-x-y*
+           (mapv (comp vec
+                       (partial cons
+                                math-node)))
+           (s/setval s/BEFORE-ELEM :g)))
+
 (defc graph-component
       [& _]
       (let [state (atom {})]
@@ -673,23 +681,18 @@
                                    [:div {:style {:overflow "scroll"
                                                   :height   "100%"
                                                   :width    "100%"}}
-                                    (->>
-                                      [:svg {:style {:height (* maximum-y
-                                                                cursor-size)
-                                                     :width  (* maximum-x
-                                                                cursor-size)}}
-                                       [:rect {:height cursor-size
-                                               :stroke "red"
-                                               :width  cursor-size
-                                               :x      (* cursor-x
-                                                          cursor-size)
-                                               :y      (* cursor-y
-                                                          cursor-size)}]]
-                                      (s/setval s/END
-                                                (mapv (comp vec
-                                                            (partial cons
-                                                                     math-node))
-                                                      current-x-y*)))])})))
+                                    [:svg {:style {:height (* maximum-y
+                                                              cursor-size)
+                                                   :width  (* maximum-x
+                                                              cursor-size)}}
+                                     [:rect {:height cursor-size
+                                             :stroke "red"
+                                             :width  cursor-size
+                                             :x      (* cursor-x
+                                                        cursor-size)
+                                             :y      (* cursor-y
+                                                        cursor-size)}]
+                                     [nodes current-x-y*]]])})))
 
 (defc error-component
       [error* editor-command*]
