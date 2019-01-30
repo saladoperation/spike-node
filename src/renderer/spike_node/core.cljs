@@ -1,18 +1,18 @@
 (ns spike-node.core
   (:require [clojure.string :as str]
             [cljs.tools.reader.edn :as edn]
-            [ace]
-            [ace-editor]
+            ace
+            ace-editor
             [aid.core :as aid]
             [cats.core :as m]
             [clojure.math.combinatorics :as combo]
             [cljs-node-io.core :refer [slurp spit]]
             [cljs-node-io.fs :as fs]
-            [cljsjs.mousetrap]
+            cljsjs.mousetrap
             [com.rpl.specter :as s]
             [frp.clojure.core :as core]
             [frp.core :as frp]
-            [katex]
+            katex
             [loom.graph :as graph]
             [reagent.core :as r]
             [spike-node.helpers :as helpers]
