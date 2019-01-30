@@ -268,8 +268,7 @@
                                        x])]
                           [:x-y
                            (s/keypath [x
-                                       y])])
-            :text]
+                                       y])])]
            s))
 
 (def action
@@ -337,7 +336,6 @@
        (m/<$> (fn [[s x y]]
                 (partial s/setval* (s/keypath [x y]) s)))
        (m/<> (m/<$> (comp constantly
-                          (partial s/transform* s/MAP-VALS :text)
                           :x-y)
                     current-node))
        (frp/accum {})
@@ -359,7 +357,7 @@
                          :content
                          get-current-node*
                          :x-y
-                         (get-in [[(:x %) (:y %)] :text] ""))
+                         (get [(:x %) (:y %)] ""))
                     loop-file))
        (frp/stepper "")))
 
