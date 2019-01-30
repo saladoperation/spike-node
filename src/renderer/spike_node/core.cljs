@@ -329,7 +329,7 @@
 (def current-node
   (m/<$> get-current-node* content))
 
-(def current-x-y*
+(def current-x-y
   (->> (frp/snapshot valid
                      cursor-x-behavior
                      cursor-y-behavior)
@@ -348,12 +348,12 @@
                       (get m [x y] ""))
                     (frp/snapshot cursor-x-event
                                   cursor-y-behavior
-                                  current-x-y*))
+                                  current-x-y))
              (m/<$> (fn [[y x m]]
                       (get m [x y] ""))
                     (frp/snapshot cursor-y-event
                                   cursor-x-behavior
-                                  current-x-y*))
+                                  current-x-y))
              (m/<$> #(-> %
                          :content
                          get-current-node*
@@ -724,7 +724,7 @@
     scroll-y
     maximum-x
     maximum-y
-    current-x-y*
+    current-x-y
     cursor-x-behavior
     cursor-y-behavior))
 
