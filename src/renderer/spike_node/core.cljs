@@ -689,8 +689,7 @@
                                                 (mapv (comp vec
                                                             (partial cons
                                                                      math-node))
-                                                      current-x-y*))
-                                      r/as-element)])})))
+                                                      current-x-y*)))])})))
 
 (defc error-component
       [error* editor-command*]
