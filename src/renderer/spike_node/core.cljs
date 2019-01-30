@@ -449,11 +449,14 @@
                       initial-file)))
          (frp/snapshot current-file-path file)))
 
+(def initial-scroll
+  0)
+
 (defn get-scroll
   [k e]
   (->> dom
        (m/<$> k)
-       (frp/stepper 0)
+       (frp/stepper initial-scroll)
        (frp/snapshot e)
        (core/reduce (fn [reduction [x view-size]]
                       (-> reduction
@@ -462,8 +465,8 @@
                                    (* cursor-size)
                                    (- view-size)))
                           (min (* x cursor-size))))
-                    0)
-       (frp/stepper 0)))
+                    initial-scroll)
+       (frp/stepper initial-scroll)))
 
 (def scroll-x
   (get-scroll :client-width cursor-x-event))
