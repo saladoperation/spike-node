@@ -345,10 +345,14 @@
   (->> insert-typing
        (m/<> (m/<$> (fn [[x y m]]
                       (get m [x y] ""))
-                    (frp/snapshot cursor-x-event cursor-y-behavior current-x-y*))
+                    (frp/snapshot cursor-x-event
+                                  cursor-y-behavior
+                                  current-x-y*))
              (m/<$> (fn [[y x m]]
                       (get m [x y] ""))
-                    (frp/snapshot cursor-y-event cursor-x-behavior current-x-y*))
+                    (frp/snapshot cursor-y-event
+                                  cursor-x-behavior
+                                  current-x-y*))
              (m/<$> #(-> %
                          :content
                          get-current-node*
