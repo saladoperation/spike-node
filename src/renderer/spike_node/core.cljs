@@ -567,7 +567,7 @@
   (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
 
 (defn math-node
-  [[x y] s]
+  [[[x y] s]]
   [:foreignObject {:x (* x cursor-size)
                    :y (* y cursor-size)}
    [math (align s)]])
@@ -652,9 +652,7 @@
 (defc nodes
       [current-x-y*]
       (->> current-x-y*
-           (mapv (comp vec
-                       (partial cons
-                                math-node)))
+           (mapv math-node)
            (s/setval s/BEFORE-ELEM :g)))
 
 (defc graph-component
