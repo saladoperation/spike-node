@@ -371,25 +371,40 @@
                             current-x-y-behavior]))
        (frp/stepper "")))
 
+(def valid-bounds
+  (->> bounds
+       (m/<$> (aid/build hash-map
+                         (juxt :left :top)
+                         identity))
+       (core/reduce merge {})
+       (m/<$> (comp (partial remove (comp zero?
+                                          :width))
+                    vals))))
+
+(def font-size
+  18)
+
+(def cursor-size
+  (* font-size 3))
+
+(def initial-maximum
+  0)
+
 (defn get-maximum
   [k b]
-  (->> current-node
-       (m/<$> (comp #(case %
-                       {} 0
-                       (-> %
-                           lfirst
-                           first))
-                    k))
-       (frp/stepper 0)
+  (->> valid-bounds
+       (m/<$> (comp (partial (aid/flip quot) cursor-size)
+                    (partial apply max initial-maximum)
+                    (partial map k)))
+       (frp/stepper initial-maximum)
        ((aid/lift-a (comp inc
-                          max))
-         b)))
+                          max)) b)))
 
 (def maximum-x
-  (get-maximum :x-y cursor-x-behavior))
+  (get-maximum :right cursor-x-behavior))
 
 (def maximum-y
-  (get-maximum :y-x cursor-y-behavior))
+  (get-maximum :bottom cursor-y-behavior))
 
 (def error
   (m/<$> get-error insert-text))
@@ -399,12 +414,6 @@
        (aid/<$ "")
        (m/<> command-typing)
        (frp/stepper "")))
-
-(def font-size
-  18)
-
-(def cursor-size
-  (* font-size 3))
 
 (def mode
   (frp/stepper :normal (m/<> (aid/<$ :normal normal)
@@ -574,18 +583,6 @@
 
 (def align
   (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
-
-(def bound
-  (->> bounds
-       (m/<$> (aid/build hash-map
-                         (juxt :left :top)
-                         identity))
-       (core/reduce merge {})
-       (m/<$> (partial s/transform*
-                       [s/MAP-VALS
-                        (s/compact (comp zero?
-                                         :width))]
-                       s/NONE))))
 
 (defn math-node
   [[[x y] s]]
