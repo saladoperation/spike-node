@@ -398,7 +398,8 @@
                     (partial map k)))
        (frp/stepper initial-maximum)
        ((aid/lift-a (comp inc
-                          max)) b)))
+                          max))
+         b)))
 
 (def maximum-x
   (get-maximum :right cursor-x-behavior))
