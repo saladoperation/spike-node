@@ -390,12 +390,21 @@
 (def initial-maximum
   0)
 
+(def get-maximum-bound
+  #(->> valid-bounds
+        (m/<$> (comp (partial (aid/flip quot) cursor-size)
+                     (partial apply max initial-maximum)
+                     (partial map %)))))
+
+(def maximum-x-bound
+  (get-maximum-bound :right))
+
+(def maximum-y-bound
+  (get-maximum-bound :bottom))
+
 (defn get-maximum
-  [k b]
-  (->> valid-bounds
-       (m/<$> (comp (partial (aid/flip quot) cursor-size)
-                    (partial apply max initial-maximum)
-                    (partial map k)))
+  [e b]
+  (->> e
        (frp/stepper initial-maximum)
        ((aid/lift-a (comp (partial * cursor-size)
                           inc
@@ -403,10 +412,10 @@
          b)))
 
 (def maximum-x
-  (get-maximum :right cursor-x-behavior))
+  (get-maximum maximum-x-bound cursor-x-behavior))
 
 (def maximum-y
-  (get-maximum :bottom cursor-y-behavior))
+  (get-maximum maximum-y-bound cursor-y-behavior))
 
 (def error
   (m/<$> get-error insert-text))
@@ -474,11 +483,11 @@
   0)
 
 (defn get-scroll
-  [k e]
+  [k maximum-bound cursor]
   (->> dom
        (m/<$> k)
        (frp/stepper initial-scroll)
-       (frp/snapshot e)
+       (frp/snapshot (m/<> maximum-bound cursor))
        (core/reduce (fn [reduction [x view-size]]
                       (-> reduction
                           (max (-> x
@@ -490,10 +499,10 @@
        (frp/stepper initial-scroll)))
 
 (def scroll-x
-  (get-scroll :client-width cursor-x-event))
+  (get-scroll :client-width maximum-x-bound cursor-x-event))
 
 (def scroll-y
-  (get-scroll :client-height cursor-y-event))
+  (get-scroll :client-height maximum-y-bound cursor-y-event))
 
 (aid/defcurried effect
   [f x]
