@@ -373,11 +373,24 @@
                             current-x-y-behavior]))
        (frp/stepper "")))
 
+(defn add-scroll
+  [k0 k1 scroll bound]
+  (s/transform (s/multi-path k0
+                             k1)
+               (partial + scroll)
+               bound))
+
 (def valid-bounds
-  (->> bounds
-       (m/<$> (aid/build hash-map
-                         (juxt :left :top)
-                         identity))
+  (->> (frp/snapshot bounds
+                     (frp/stepper 0 loop-scroll-x)
+                     (frp/stepper 0 loop-scroll-y))
+       (m/<$> (comp (aid/build hash-map
+                               (juxt :left :top)
+                               identity)
+                    (fn [[bound scroll-x scroll-y]]
+                      (->> bound
+                           (add-scroll :left :right scroll-x)
+                           (add-scroll :top :bottom scroll-y)))))
        (core/reduce merge {})
        (m/<$> (comp (partial remove (comp zero?
                                           :width))
