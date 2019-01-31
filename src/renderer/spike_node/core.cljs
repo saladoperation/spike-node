@@ -564,6 +564,13 @@
 (def align
   (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
 
+(def bound
+  (->> bounds
+       (m/<$> (aid/build hash-map
+                         (juxt :left :top)
+                         identity))
+       (core/reduce merge {})))
+
 (defn math-node
   [[[x y] s]]
   [:> measure
