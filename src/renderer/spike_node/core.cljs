@@ -501,7 +501,7 @@
   [k maximum-bound cursor]
   (->> dom
        (m/<$> k)
-       (frp/stepper initial-scroll)
+       (frp/stepper 0)
        (frp/snapshot (m/<> maximum-bound cursor))
        (core/reduce (fn [reduction [x view-size]]
                       (-> reduction
