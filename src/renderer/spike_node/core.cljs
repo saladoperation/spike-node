@@ -486,15 +486,18 @@
                     initial-scroll)
        (frp/stepper initial-scroll)))
 
+(def maximum-pixel
+  33554428)
+
 (def client-width
   (->> dom
        (m/<$> :client-width)
-       (frp/stepper 0)))
+       (frp/stepper maximum-pixel)))
 
 (def client-height
   (->> dom
        (m/<$> :client-height)
-       (frp/stepper 0)))
+       (frp/stepper maximum-pixel)))
 
 (def get-maximum-bound
   #(m/<$> (comp (partial (aid/flip quot) cursor-size)
