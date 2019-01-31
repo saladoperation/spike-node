@@ -570,6 +570,7 @@
    {:bounds    true
     :on-resize #(-> %
                     .-bounds
+                    (js->clj :keywordize-keys true)
                     bounds)}
    #(r/as-element [:foreignObject {:x (* x cursor-size)
                                    :y (* y cursor-size)}
