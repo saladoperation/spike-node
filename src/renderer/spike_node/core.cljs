@@ -323,14 +323,12 @@
                                                              lfirst)))
                            redo))))
 
-(def get-current-node*
-  (comp :node
-        ffirst))
-
 (def current-node
-  (m/<$> get-current-node* content))
+  (m/<$> (comp :node
+               ffirst)
+         content))
 
-(def current-x-y
+(def current-x-y-event
   (->> (frp/snapshot valid
                      cursor-x-behavior
                      cursor-y-behavior)
@@ -339,27 +337,29 @@
        (m/<> (m/<$> (comp constantly
                           :x-y)
                     current-node))
-       (frp/accum {})
-       (frp/stepper {})))
+       (frp/accum {})))
+
+(def current-x-y-behavior
+  (frp/stepper {} current-x-y-event))
 
 (def insert-text
   (->> insert-typing
+       ;TODO extract a function
        (m/<> (m/<$> (fn [[x y m]]
                       (get m [x y] ""))
                     (frp/snapshot cursor-x-event
                                   cursor-y-behavior
-                                  current-x-y))
+                                  current-x-y-behavior))
              (m/<$> (fn [[y x m]]
                       (get m [x y] ""))
                     (frp/snapshot cursor-y-event
                                   cursor-x-behavior
-                                  current-x-y))
-             (m/<$> #(-> %
-                         :content
-                         get-current-node*
-                         :x-y
-                         (get [(:x %) (:y %)] ""))
-                    loop-file))
+                                  current-x-y-behavior))
+             (m/<$> (fn [[m x y]]
+                      (get m [x y] ""))
+                    (frp/snapshot current-x-y-event
+                                  cursor-x-behavior
+                                  cursor-y-behavior)))
        (frp/stepper "")))
 
 (defn get-maximum
@@ -748,7 +748,7 @@
     scroll-y
     maximum-x
     maximum-y
-    current-x-y
+    current-x-y-behavior
     cursor-x-behavior
     cursor-y-behavior))
 
