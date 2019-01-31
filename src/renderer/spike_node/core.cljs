@@ -473,13 +473,9 @@
   0)
 
 (defn get-scroll
-  [client k cursor]
+  [client bound cursor]
   (->> client
-       (frp/snapshot (m/<> (m/<$> (comp (partial (aid/flip quot) cursor-size)
-                                        (partial apply max initial-maximum)
-                                        (partial map k))
-                                  valid-bounds)
-                           cursor))
+       (frp/snapshot (m/<> bound cursor))
        (core/reduce (fn [reduction [x view-size]]
                       (-> reduction
                           (max (-> x
@@ -500,25 +496,46 @@
        (m/<$> :client-width)
        (frp/stepper 0)))
 
+(def get-maximum-bound
+  #(m/<$> (comp (partial (aid/flip quot) cursor-size)
+                (partial apply max initial-maximum)
+                (partial map %))
+          valid-bounds))
+
+(def maximum-x-bound
+  (get-maximum-bound :right))
+
+(def maximum-y-bound
+  (get-maximum-bound :bottom))
+
 (def current-scroll-x
-  (get-scroll client-width :right cursor-x-event))
+  (get-scroll client-width maximum-x-bound cursor-x-event))
 
 (def current-scroll-y
-  (get-scroll client-height :bottom cursor-y-event))
+  (get-scroll client-height maximum-y-bound cursor-y-event))
+
+(def get-pixel
+  (partial m/<$> (comp (partial * cursor-size)
+                       inc)))
 
 (defn get-maximum
-  [client scroll cursor]
-  (-> cursor
-      inc
-      (* cursor-size)
-      (max (+ client scroll))
-      frp/transparent))
+  [client scroll bound cursor]
+  ((aid/lift-a max)
+    ((aid/lift-a +) client scroll)
+    (get-pixel (frp/stepper initial-maximum bound))
+    (get-pixel cursor)))
 
 (def maximum-x
-  (get-maximum client-width current-scroll-x cursor-x-behavior))
+  (get-maximum client-width
+               current-scroll-x
+               maximum-x-bound
+               cursor-x-behavior))
 
 (def maximum-y
-  (get-maximum client-height current-scroll-y cursor-y-behavior))
+  (get-maximum client-height
+               current-scroll-y
+               maximum-y-bound
+               cursor-y-behavior))
 
 (aid/defcurried effect
   [f x]
