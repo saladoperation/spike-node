@@ -634,8 +634,8 @@
 (def memoized-keyword
   (memoize cuerdas/keyword))
 
-(defn convert-keys
-  [x ks]
+(aid/defcurried convert-keys
+  [ks x]
   (->> ks
        (mapcat (juxt memoized-keyword
                      #(case (-> x
@@ -645,14 +645,22 @@
                         (oget+ x %))))
        (apply hash-map)))
 
-(def convert-object
-  (aid/build convert-keys
-             identity
-             object/getKeys))
-
+;(def convert-object
+;  (aid/build convert-keys
+;             object/getKeys
+;             identity))
+;
+;(def dom*
+;  (comp dom
+;        convert-object
+;        r/dom-node))
+;
+;=> @dom
+;#object[TypeError TypeError: Cannot convert a Symbol value to a string]
 (def dom*
   (comp dom
-        convert-object
+        (convert-keys #{"clientWidth"
+                        "clientHeight"})
         r/dom-node))
 
 (defc nodes
