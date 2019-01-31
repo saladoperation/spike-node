@@ -760,7 +760,10 @@
                                     [:svg {:style {:height maximum-y
                                                    :width  maximum-x}}
                                      [:rect {:height cursor-size
-                                             :stroke "red"
+                                             :style  {:outline-color  "red"
+                                                      :outline-offset -1
+                                                      :outline-style  "solid"
+                                                      :outline-width  1}
                                              :width  cursor-size
                                              :x      (* cursor-x
                                                         cursor-size)
