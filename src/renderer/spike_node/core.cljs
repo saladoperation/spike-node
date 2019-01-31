@@ -17,7 +17,7 @@
             katex
             measure
             [loom.graph :as graph]
-            [oops.core :refer [oget+]]
+            [oops.core :refer [oget+ oset!]]
             [reagent.core :as r]
             [spike-node.helpers :as helpers]
             [spike-node.loom :as loom]
@@ -762,6 +762,8 @@
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
+
+(oset! js/window "onsubmit" #(.preventDefault %))
 
 (defn bind
   [s e]
