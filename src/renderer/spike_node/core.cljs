@@ -650,7 +650,7 @@
   "black")
 
 (def maximum-z-index
-  ;https://stackoverflow.com/questions/491052/minimum-and-maximum-value-of-z-index
+  ;https://stackoverflow.com/a/25461690
   2147483647)
 
 (def get-percent
