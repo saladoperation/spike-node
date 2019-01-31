@@ -397,7 +397,8 @@
                     (partial apply max initial-maximum)
                     (partial map k)))
        (frp/stepper initial-maximum)
-       ((aid/lift-a (comp inc
+       ((aid/lift-a (comp (partial * cursor-size)
+                          inc
                           max))
          b)))
 
@@ -714,10 +715,8 @@
                                    [:div {:style {:overflow "scroll"
                                                   :height   "100%"
                                                   :width    "100%"}}
-                                    [:svg {:style {:height (* maximum-y
-                                                              cursor-size)
-                                                   :width  (* maximum-x
-                                                              cursor-size)}}
+                                    [:svg {:style {:height maximum-y
+                                                   :width  maximum-x}}
                                      [:rect {:height cursor-size
                                              :stroke "red"
                                              :width  cursor-size
