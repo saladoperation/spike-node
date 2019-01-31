@@ -507,11 +507,11 @@
   (get-scroll client-height :bottom cursor-y-event))
 
 (defn get-maximum
-  [client current-scroll cursor]
+  [client scroll cursor]
   (-> cursor
       inc
       (* cursor-size)
-      (max (+ client current-scroll))
+      (max (+ client scroll))
       frp/transparent))
 
 (def maximum-x
