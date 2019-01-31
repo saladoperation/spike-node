@@ -487,6 +487,7 @@
        (frp/stepper initial-scroll)))
 
 (def maximum-pixel
+  ;https://stackoverflow.com/a/16637689
   33554428)
 
 (def client-width
