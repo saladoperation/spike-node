@@ -493,7 +493,7 @@
 
 (def client-height
   (->> dom
-       (m/<$> :client-width)
+       (m/<$> :client-height)
        (frp/stepper 0)))
 
 (def get-maximum-bound
