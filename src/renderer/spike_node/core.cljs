@@ -268,7 +268,9 @@
                           [:x-y
                            (s/keypath [x
                                        y])])]
-           s))
+           (aid/casep s
+             empty? s/NONE
+             s)))
 
 (def action
   (->> valid
