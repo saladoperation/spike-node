@@ -342,24 +342,33 @@
 (def current-x-y-behavior
   (frp/stepper {} current-x-y-event))
 
+(aid/defcurried extract-insert
+  [n coll]
+  (->> coll
+       (s/setval s/FIRST s/NONE)
+       (s/setval (s/before-index n) (first coll))))
+
+(defn zip-entities
+  [f es bs]
+  (->> es
+       (map-indexed (fn [n e]
+                      (->> bs
+                           (s/setval (s/nthpath n) s/NONE)
+                           (apply frp/snapshot e)
+                           (m/<$> (comp f
+                                        (extract-insert n))))))
+       (apply m/<>)))
+
 (def insert-text
   (->> insert-typing
-       ;TODO extract a function
-       (m/<> (m/<$> (fn [[x y m]]
-                      (get m [x y] ""))
-                    (frp/snapshot cursor-x-event
-                                  cursor-y-behavior
-                                  current-x-y-behavior))
-             (m/<$> (fn [[y x m]]
-                      (get m [x y] ""))
-                    (frp/snapshot cursor-y-event
-                                  cursor-x-behavior
-                                  current-x-y-behavior))
-             (m/<$> (fn [[m x y]]
-                      (get m [x y] ""))
-                    (frp/snapshot current-x-y-event
-                                  cursor-x-behavior
-                                  cursor-y-behavior)))
+       (m/<> (zip-entities (fn [[x y m]]
+                             (get m [x y] ""))
+                           [cursor-x-event
+                            cursor-y-event
+                            current-x-y-event]
+                           [cursor-x-behavior
+                            cursor-y-behavior
+                            current-x-y-behavior]))
        (frp/stepper "")))
 
 (defn get-maximum
