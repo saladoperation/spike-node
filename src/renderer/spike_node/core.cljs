@@ -31,6 +31,7 @@
           up
           left
           right
+          carrot
           dom
           normal-escape
           insert-normal
@@ -190,6 +191,7 @@
 (def cursor-x-event
   (->> loop-file
        (m/<$> :x)
+       (m/<> (aid/<$ initial-cursor carrot))
        (get-cursor-event right left)))
 
 (def cursor-y-event
@@ -827,6 +829,7 @@
 
 (def keymap
   {":"      command
+   "^"      carrot
    "ctrl+r" redo
    "escape" normal-escape
    "h"      left
