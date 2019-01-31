@@ -25,6 +25,8 @@
 
 (frp/defe loop-file
           loop-file-path
+          loop-scroll-x
+          loop-scroll-y
           down
           up
           left
@@ -498,10 +500,10 @@
                     initial-scroll)
        (frp/stepper initial-scroll)))
 
-(def scroll-x
+(def current-scroll-x
   (get-scroll :client-width maximum-x-bound cursor-x-event))
 
-(def scroll-y
+(def current-scroll-y
   (get-scroll :client-height maximum-y-bound cursor-y-event))
 
 (aid/defcurried effect
@@ -764,8 +766,8 @@
 
 (def graph-view
   ((aid/lift-a graph-component)
-    scroll-x
-    scroll-y
+    current-scroll-x
+    current-scroll-y
     maximum-x
     maximum-y
     current-x-y-behavior
@@ -795,7 +797,9 @@
 
 (loop-event {loop-directory-event current-directory-path
              loop-file-path       current-file-path
-             loop-file            current-file})
+             loop-file            current-file
+             loop-scroll-x        current-scroll-x
+             loop-scroll-y        current-scroll-y})
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
