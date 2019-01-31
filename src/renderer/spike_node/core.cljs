@@ -13,7 +13,6 @@
             [cuerdas.core :as cuerdas]
             [frp.clojure.core :as core]
             [frp.core :as frp]
-            [goog.object :as object]
             katex
             measure
             [loom.graph :as graph]
