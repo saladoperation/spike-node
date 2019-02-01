@@ -425,6 +425,12 @@
                           last))
        (m/<$> first)))
 
+(def placeholder
+  [])
+
+(def edge
+  (frp/snapshot in (frp/stepper placeholder edge-node)))
+
 (def editor-command
   (->> editor-keyup
        (core/filter (partial = ":"))
