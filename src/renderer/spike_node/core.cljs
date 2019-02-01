@@ -772,10 +772,8 @@
                                                       :outline-style  "solid"
                                                       :outline-width  outline-width}
                                              :width  cursor-size
-                                             :x      (* cursor-x
-                                                        cursor-size)
-                                             :y      (* cursor-y
-                                                        cursor-size)}]
+                                             :x      (* cursor-x cursor-size)
+                                             :y      (* cursor-y cursor-size)}]
                                      [nodes current-x-y*]]])})))
 
 (defc error-component
