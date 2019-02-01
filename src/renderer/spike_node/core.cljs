@@ -272,24 +272,24 @@
              s)))
 
 (def action
-  (->> valid
-       (frp/stepper "")
-       (frp/snapshot normal cursor-x-behavior cursor-y-behavior typed)
-       (m/<$>
-         (fn [[_ x y typed* s]]
-           (aid/if-else
-             (comp (aid/build =
-                              (make-transform-current-content x y s)
-                              identity)
-                   ffirst)
-             (if typed*
-               (comp (partial s/transform* s/FIRST (partial take undo-size))
-                     (aid/transfer* [s/FIRST s/BEFORE-ELEM]
-                                    (comp (make-transform-current-content x
-                                                                          y
-                                                                          s)
-                                          ffirst)))
-               identity))))
+  (->> (frp/snapshot (->> (frp/snapshot normal typed)
+                          (core/filter last)
+                          (m/<$> first))
+                     ((aid/lift-a make-transform-current-content)
+                       cursor-x-behavior
+                       cursor-y-behavior
+                       (frp/stepper "" valid)))
+       (m/<$> (fn [[_ f]]
+                (aid/if-else (comp (aid/build =
+                                              f
+                                              identity)
+                                   ffirst)
+                             (comp (partial s/transform*
+                                            s/FIRST
+                                            (partial take undo-size))
+                                   (aid/transfer* [s/FIRST s/BEFORE-ELEM]
+                                                  (comp f
+                                                        ffirst))))))
        (m/<> (m/<$> (comp constantly
                           :content)
                     source-file))))
