@@ -304,7 +304,7 @@
   (comp first
         last))
 
-(def content
+(def historical-content
   (frp/accum initial-content
              (m/<> action
                    (aid/<$ (aid/if-then (comp multiton?
@@ -324,10 +324,13 @@
                                                              lfirst)))
                            redo))))
 
-(def node
-  (m/<$> (comp :node
-               ffirst)
-         content))
+(def current-content
+  (m/<$> ffirst historical-content))
+
+(def edges
+  (m/<$> (comp graph/edges
+               :edge)
+         current-content))
 
 (def x-y-event
   (->> (frp/snapshot valid
@@ -336,8 +339,9 @@
        (m/<$> (fn [[s x y]]
                 (partial s/setval* (s/keypath [x y]) s)))
        (m/<> (m/<$> (comp constantly
-                          :x-y)
-                    node))
+                          :x-y
+                          :node)
+                    current-content))
        (frp/accum {})))
 
 (def x-y-behavior
@@ -424,7 +428,7 @@
 (def placeholder
   [])
 
-(def edge-addition
+(def additional-edge
   (->> edge-node
        (frp/stepper placeholder)
        (frp/snapshot in)
@@ -433,7 +437,7 @@
 (def sink-transform-edge
   (m/<$> (fn [addition*]
            (partial s/transform* :edge #(graph/add-edges % addition*)))
-         edge-addition))
+         additional-edge))
 
 (def editor-command
   (->> editor-keyup
@@ -450,7 +454,7 @@
                      (m/<$> first))
                 ((aid/lift-a (comp (partial zipmap [:content :x :y])
                                    vector))
-                  (frp/stepper initial-content content)
+                  (frp/stepper initial-content historical-content)
                   cursor-x-behavior
                   cursor-y-behavior)))
 
