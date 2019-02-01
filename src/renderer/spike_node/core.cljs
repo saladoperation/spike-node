@@ -671,6 +671,10 @@
 (def outline-width
   1)
 
+(def get-cursor-pixel
+  (comp (partial + (/ marker-size 2))
+        (partial * cursor-size)))
+
 (defn math-node
   [& _]
   (let [state (r/atom {:height maximum-pixel})]
@@ -680,8 +684,8 @@
                                   (partial (aid/flip -) (* 2 font-size))
                                   @state)
                      {:fill  background-color
-                      :x     (* x cursor-size)
-                      :y     (* y cursor-size)
+                      :x     (get-cursor-pixel x)
+                      :y     (get-cursor-pixel y)
                       :style {:outline-color background-color
                               :outline-style "solid"
                               :outline-width outline-width}})]
@@ -692,8 +696,8 @@
                          (js->clj :keywordize-keys true)
                          ((juxt bounds
                                 (partial reset! state))))}
-        #(r/as-element [:foreignObject {:x (* x cursor-size)
-                                        :y (* y cursor-size)}
+        #(r/as-element [:foreignObject {:x (get-cursor-pixel x)
+                                        :y (get-cursor-pixel y)}
                         [:div {:ref   (.-measureRef %)
                                :style {:display    "inline-block"
                                        :margin-top (- font-size)}}
@@ -793,7 +797,7 @@
                                    :stroke-width 1
                                    :stroke       "white"})
         (partial zipmap [:x1 :y1 :x2 :y2])
-        (partial map (partial * cursor-size))
+        (partial map get-cursor-pixel)
         flatten))
 
 (defc edges-component
@@ -864,9 +868,9 @@
                                                  :outline-width  outline-width}
                                        :opacity 0
                                        :width   cursor-size
-                                       :x       (* cursor-x cursor-size)
-                                       :y       (* cursor-y
-                                                   cursor-size)}]]])})))
+                                       :x       (get-cursor-pixel cursor-x)
+                                       :y       (get-cursor-pixel
+                                                  cursor-y)}]]])})))
 
 (defc error-component
       [error* editor-command*]
