@@ -368,9 +368,7 @@
   (->> insert-typing
        (m/<> (zip-entities (fn [[x y m]]
                              (get m [x y] ""))
-                           [cursor-x-event
-                            cursor-y-event
-                            current-x-y-event]
+                           [cursor-x-event cursor-y-event current-x-y-event]
                            [cursor-x-behavior
                             cursor-y-behavior
                             current-x-y-behavior]))
