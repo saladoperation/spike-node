@@ -27,6 +27,7 @@
           source-file
           source-scroll-x
           source-scroll-y
+          source-transform-edge
           down
           up
           left
@@ -279,17 +280,18 @@
                        cursor-x-behavior
                        cursor-y-behavior
                        (frp/stepper "" valid)))
-       (m/<$> (fn [[_ f]]
-                (aid/if-else (comp (aid/build =
-                                              f
-                                              identity)
-                                   ffirst)
-                             (comp (partial s/transform*
-                                            s/FIRST
-                                            (partial take undo-size))
-                                   (aid/transfer* [s/FIRST s/BEFORE-ELEM]
-                                                  (comp f
-                                                        ffirst))))))
+       (m/<$> last)
+       (m/<> source-transform-edge)
+       (m/<$> #(aid/if-else (comp (aid/build =
+                                             %
+                                             identity)
+                                  ffirst)
+                            (comp (partial s/transform*
+                                           s/FIRST
+                                           (partial take undo-size))
+                                  (aid/transfer* [s/FIRST s/BEFORE-ELEM]
+                                                 (comp %
+                                                       ffirst)))))
        (m/<> (m/<$> (comp constantly
                           :content)
                     source-file))))
@@ -423,7 +425,14 @@
   [])
 
 (def edge
-  (frp/snapshot in (frp/stepper placeholder edge-node)))
+  (->> (frp/stepper placeholder edge-node)
+       (frp/snapshot in)
+       (m/<$> reverse)))
+
+(def sink-transform-edge
+  (m/<$> (fn [edge*]
+           (partial s/transform* :edge #(graph/add-edges % edge*)))
+         edge))
 
 (def editor-command
   (->> editor-keyup
@@ -847,10 +856,11 @@
 (def loop-event
   (partial run! (partial apply frp/run)))
 
-(loop-event {source-directory sink-directory
-             source-file      sink-file
-             source-scroll-x  sink-scroll-x
-             source-scroll-y  sink-scroll-y})
+(loop-event {source-directory      sink-directory
+             source-file           sink-file
+             source-scroll-x       sink-scroll-x
+             source-scroll-y       sink-scroll-y
+             source-transform-edge sink-transform-edge})
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
