@@ -677,6 +677,9 @@
 (def background-color
   "black")
 
+(def color
+  "white")
+
 (def outline-width
   1)
 
@@ -730,7 +733,7 @@
   {:background-color background-color
    :border           "none"
    :bottom           0
-   :color            "white"
+   :color            color
    :position         "absolute"
    :z-index          maximum-z-index})
 
@@ -804,7 +807,7 @@
   (comp (partial vector :line)
         (partial s/setval* :style {:marker-end   "url(#arrow)"
                                    :stroke-width 1
-                                   :stroke       "white"})
+                                   :stroke       color})
         (partial zipmap [:x1 :y1 :x2 :y2])
         (partial map get-cursor-pixel)
         flatten))
@@ -865,7 +868,7 @@
                                                :ref-y         ref-y
                                                :view-box      view-box}
                                       [:path {:d    path-d
-                                              :fill "white"}]]
+                                              :fill color}]]
                                      [edges-component edges*]
                                      [nodes x-y*]
                                      [:rect
@@ -894,7 +897,7 @@
       [opened* graph-view* command-view* editor-view* error-view*]
       (s/setval s/BEGINNING
                 [:div {:style {:background-color background-color
-                               :color            "white"
+                               :color            color
                                :display          "flex"
                                :height           "100%"
                                :overflow         "hidden"
