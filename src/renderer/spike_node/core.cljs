@@ -25,6 +25,7 @@
 
 (frp/defe source-directory
           source-file
+          source-in
           source-scroll-x
           source-scroll-y
           source-transform-edge
@@ -234,7 +235,7 @@
                                      ffirst)
                                (comp exit?
                                      llast)))
-       (m/<> command-exit normal-escape)))
+       (m/<> command-exit normal-escape source-in)))
 
 (def undo-size
   10)
@@ -419,7 +420,7 @@
                              (aid/<$ :command command)
                              (aid/<$ :edge edge-node))))
 
-(def in
+(def sink-in
   (->> mode
        (frp/snapshot (core/distinct edge-node))
        (core/filter (comp (partial = :edge)
@@ -432,7 +433,7 @@
 (def additional-edge
   (->> edge-node
        (frp/stepper placeholder)
-       (frp/snapshot in)
+       (frp/snapshot sink-in)
        (m/<$> reverse)))
 
 (def sink-transform-edge
@@ -924,6 +925,7 @@
 
 (loop-event {source-directory      sink-directory
              source-file           sink-file
+             source-in             sink-in
              source-scroll-x       sink-scroll-x
              source-scroll-y       sink-scroll-y
              source-transform-edge sink-transform-edge})
