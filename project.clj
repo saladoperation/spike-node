@@ -34,11 +34,13 @@
                                                              :provides       ["ace"
                                                                               "ace-editor"
                                                                               "katex"
+                                                                              "measure"
                                                                               "react"
                                                                               "react-dom"]
                                                              :global-exports {ace        ace
                                                                               ace-editor AceEditor
                                                                               katex      katex
+                                                                              measure    Measure
                                                                               react      React
                                                                               react-dom  ReactDOM}}]
                                           :closure-defines {goog.DEBUG false}}}}})

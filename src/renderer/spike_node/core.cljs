@@ -1,30 +1,38 @@
 (ns spike-node.core
   (:require [clojure.string :as str]
             [cljs.tools.reader.edn :as edn]
-            [ace]
-            [ace-editor]
+            ace
+            ace-editor
             [aid.core :as aid]
             [cats.core :as m]
             [clojure.math.combinatorics :as combo]
             [cljs-node-io.core :refer [slurp spit]]
             [cljs-node-io.fs :as fs]
-            [cljsjs.mousetrap]
+            cljsjs.mousetrap
             [com.rpl.specter :as s]
+            [cuerdas.core :as cuerdas]
             [frp.clojure.core :as core]
             [frp.core :as frp]
-            [katex]
+            katex
+            measure
             [loom.graph :as graph]
+            [oops.core :refer [oget+ oset!]]
             [reagent.core :as r]
             [spike-node.helpers :as helpers]
             [spike-node.loom :as loom]
-            [spike-node.parse.core :as parse]))
+            [spike-node.parse.core :as parse])
+  (:require-macros [spike-node.core :refer [defc]]))
 
 (frp/defe loop-file
           loop-file-path
+          loop-scroll-x
+          loop-scroll-y
           down
           up
           left
           right
+          carrot
+          dom
           normal-escape
           insert-normal
           insert-insert
@@ -34,6 +42,7 @@
           command-keydown
           insert-typing
           command-typing
+          bounds
           submission
           undo
           redo)
@@ -179,21 +188,22 @@
 (def get-cursor-behavior
   (partial frp/stepper initial-cursor))
 
-(def x-event
+(def cursor-x-event
   (->> loop-file
        (m/<$> :x)
+       (m/<> (aid/<$ initial-cursor carrot))
        (get-cursor-event right left)))
 
-(def y-event
+(def cursor-y-event
   (->> loop-file
        (m/<$> :y)
        (get-cursor-event down up)))
 
-(def x-behavior
-  (get-cursor-behavior x-event))
+(def cursor-x-behavior
+  (get-cursor-behavior cursor-x-event))
 
-(def y-behavior
-  (get-cursor-behavior y-event))
+(def cursor-y-behavior
+  (get-cursor-behavior cursor-y-event))
 
 (defrecord Table
   [x-y y-x])
@@ -247,7 +257,7 @@
   (core/filter valid-expression? insert-typing))
 
 (def typed
-  (->> (m/<> x-event y-event)
+  (->> (m/<> cursor-x-event cursor-y-event)
        (aid/<$ false)
        (m/<> (aid/<$ true valid))
        (frp/stepper false)))
@@ -261,14 +271,15 @@
                                        x])]
                           [:x-y
                            (s/keypath [x
-                                       y])])
-            :text]
-           s))
+                                       y])])]
+           (aid/casep s
+             empty? s/NONE
+             s)))
 
 (def action
   (->> valid
        (frp/stepper "")
-       (frp/snapshot normal x-behavior y-behavior typed)
+       (frp/snapshot normal cursor-x-behavior cursor-y-behavior typed)
        (m/<$>
          (fn [[_ x y typed* s]]
            (aid/if-else
@@ -316,39 +327,76 @@
                                                              lfirst)))
                            redo))))
 
-(def get-current-x-y
-  (comp :x-y
-        :node
-        ffirst))
-
 (def current-node
+  (m/<$> (comp :node
+               ffirst)
+         content))
+
+(def current-x-y-event
   (->> (frp/snapshot valid
-                     x-behavior
-                     y-behavior)
+                     cursor-x-behavior
+                     cursor-y-behavior)
        (m/<$> (fn [[s x y]]
                 (partial s/setval* (s/keypath [x y]) s)))
        (m/<> (m/<$> (comp constantly
-                          (partial s/transform* s/MAP-VALS :text)
-                          :x-y
-                          :node
-                          ffirst)
-                    content))
-       (frp/accum {})
-       (frp/stepper {})))
+                          :x-y)
+                    current-node))
+       (frp/accum {})))
+
+(def current-x-y-behavior
+  (frp/stepper {} current-x-y-event))
+
+(aid/defcurried extract-insert
+  [n coll]
+  (->> coll
+       (s/setval s/FIRST s/NONE)
+       (s/setval (s/before-index n) (first coll))))
+
+(defn zip-entities
+  [f es bs]
+  (->> es
+       (map-indexed (fn [n e]
+                      (->> bs
+                           (s/setval (s/nthpath n) s/NONE)
+                           (apply frp/snapshot e)
+                           (m/<$> (comp f
+                                        (extract-insert n))))))
+       (apply m/<>)))
 
 (def insert-text
   (->> insert-typing
-       (m/<> (m/<$> (fn [[x y m]]
-                      (get m [x y] ""))
-                    (frp/snapshot x-event y-behavior current-node))
-             (m/<$> (fn [[y x m]]
-                      (get m [x y] ""))
-                    (frp/snapshot y-event x-behavior current-node))
-             (m/<$> #(get-in (get-current-x-y (:content %))
-                             [[(:x %) (:y %)] :text]
-                             "")
-                    loop-file))
+       (m/<> (zip-entities (fn [[x y m]]
+                             (get m [x y] ""))
+                           [cursor-x-event
+                            cursor-y-event
+                            current-x-y-event]
+                           [cursor-x-behavior
+                            cursor-y-behavior
+                            current-x-y-behavior]))
        (frp/stepper "")))
+
+(defn add-scroll
+  [k0 k1 scroll bound]
+  (s/transform (s/multi-path k0
+                             k1)
+               (partial + scroll)
+               bound))
+
+(def valid-bounds
+  (->> (frp/snapshot bounds
+                     (frp/stepper 0 loop-scroll-x)
+                     (frp/stepper 0 loop-scroll-y))
+       (m/<$> (comp (aid/build hash-map
+                               (juxt :left :top)
+                               identity)
+                    (fn [[bound scroll-x scroll-y]]
+                      (->> bound
+                           (add-scroll :left :right scroll-x)
+                           (add-scroll :top :bottom scroll-y)))))
+       (core/reduce merge {})
+       (m/<$> (comp (partial remove (comp zero?
+                                          :width))
+                    vals))))
 
 (def error
   (m/<$> get-error insert-text))
@@ -358,12 +406,6 @@
        (aid/<$ "")
        (m/<> command-typing)
        (frp/stepper "")))
-
-(def font-size
-  18)
-
-(def cursor-size
-  (* font-size 3))
 
 (def mode
   (frp/stepper :normal (m/<> (aid/<$ :normal normal)
@@ -386,8 +428,8 @@
                 ((aid/lift-a (comp (partial zipmap [:content :x :y])
                                    vector))
                   (frp/stepper initial-content content)
-                  x-behavior
-                  y-behavior)))
+                  cursor-x-behavior
+                  cursor-y-behavior)))
 
 (def file
   (->> file-entry
@@ -418,69 +460,167 @@
                       initial-file)))
          (frp/snapshot current-file-path file)))
 
-(defn editor
-  [& _]
+(def initial-scroll
+  0)
+
+(def font-size
+  18)
+
+(def cursor-size
+  (* font-size 3))
+
+(def initial-maximum
+  0)
+
+(defn get-scroll
+  [client bound cursor]
+  (->> client
+       (frp/snapshot (m/<> bound cursor))
+       (core/reduce (fn [reduction [x view-size]]
+                      (-> reduction
+                          (max (-> x
+                                   inc
+                                   (* cursor-size)
+                                   (- view-size)))
+                          (min (* x cursor-size))))
+                    initial-scroll)
+       (frp/stepper initial-scroll)))
+
+(def maximum-pixel
+  ;https://stackoverflow.com/a/16637689
+  33554428)
+
+(def client-width
+  (->> dom
+       (m/<$> :client-width)
+       (frp/stepper maximum-pixel)))
+
+(def client-height
+  (->> dom
+       (m/<$> :client-height)
+       (frp/stepper maximum-pixel)))
+
+(def get-maximum-bound
+  #(m/<$> (comp (partial (aid/flip quot) cursor-size)
+                (partial apply max initial-maximum)
+                (partial map %))
+          valid-bounds))
+
+(def maximum-x-bound
+  (get-maximum-bound :right))
+
+(def maximum-y-bound
+  (get-maximum-bound :bottom))
+
+(def current-scroll-x
+  (get-scroll client-width maximum-x-bound cursor-x-event))
+
+(def current-scroll-y
+  (get-scroll client-height maximum-y-bound cursor-y-event))
+
+(def get-pixel
+  (partial m/<$> (comp (partial * cursor-size)
+                       inc)))
+
+(defn get-maximum
+  [client scroll bound cursor]
+  ((aid/lift-a max)
+    ((aid/lift-a +) client scroll)
+    (get-pixel (frp/stepper initial-maximum bound))
+    (get-pixel cursor)))
+
+(def maximum-x
+  (get-maximum client-width
+               current-scroll-x
+               maximum-x-bound
+               cursor-x-behavior))
+
+(def maximum-y
+  (get-maximum client-height
+               current-scroll-y
+               maximum-y-bound
+               cursor-y-behavior))
+
+(aid/defcurried effect
+  [f x]
+  (f x)
+  x)
+
+(defn memoize-one
+  [f!]
+  ;TODO use core.memoize when core.memoize supports ClojureScript
   (let [state (atom {})]
-    (r/create-class
-      {:component-did-mount
-       (fn [_]
-         (->
-           @state
-           :editor
-           .textInput.getElement
-           (.addEventListener
-             "keydown"
-             #(editor-keydown [(.keyBinding.getStatusText (:editor @state)
-                                                          (:editor @state))
-                               (.-key %)])))
-         (-> @state
-             :editor
-             .textInput.getElement
-             (.addEventListener
-               "keyup"
-               (fn [event*]
-                 (editor-keyup (.keyBinding.getStatusText (:editor @state)
-                                                          (:editor @state)))
-                 (swap! state
-                        (partial s/setval*
-                                 :backtick
-                                 (-> event*
-                                     .-key
-                                     (= "`"))))))))
-       :component-did-update
-       (fn [_]
-         (if (-> @state
-                 :mode
-                 (= :normal))
-           (-> @state
+    (fn [& more]
+      (aid/case-eval more
+        (:arguments @state) (:return @state)
+        (->> more
+             (apply f!)
+             (effect #(reset! state {:arguments more
+                                     :return    %})))))))
+
+(defc editor
+      [& _]
+      (let [state (atom {})]
+        (r/create-class
+          {:component-did-mount
+           (fn [_]
+             (->
+               @state
                :editor
-               .blur)))
-       :reagent-render
-       (fn [mode* text*]
-         (swap! state (partial s/setval* :mode mode*))
-         [:> ace-editor
-          {:commands         [{:name    "`"
-                               :bindKey "`"
-                               :exec    aid/nop}
-                              {:bindKey "l"
-                               :exec    #(.insert (:editor @state)
-                                                  (aid/casep @state
-                                                    :backtick "\\lambda"
-                                                    "l"))}]
-           :focus            (= :insert mode*)
-           :keyboard-handler "vim"
-           :mode             "latex"
-           :on-change        #(insert-typing %)
-           :ref              #(if %
-                                (swap! state
-                                       (partial s/setval*
-                                                :editor
-                                                (.-editor %))))
-           :style            {:font-size font-size
-                              :height    "100%"
-                              :width     "100%"}
-           :theme            "terminal"
-           :value            text*}])})))
+               .textInput.getElement
+               (.addEventListener
+                 "keydown"
+                 #(editor-keydown [(.keyBinding.getStatusText (:editor @state)
+                                                              (:editor @state))
+                                   (.-key %)])))
+             (-> @state
+                 :editor
+                 .textInput.getElement
+                 (.addEventListener
+                   "keyup"
+                   (fn [event*]
+                     (editor-keyup (.keyBinding.getStatusText (:editor @state)
+                                                              (:editor @state)))
+                     (swap! state
+                            (partial s/setval*
+                                     :backtick
+                                     (-> event*
+                                         .-key
+                                         (= "`"))))))))
+           :component-did-update
+           (fn [_]
+             (if (-> @state
+                     :mode
+                     (= :normal))
+               (-> @state
+                   :editor
+                   .blur)))
+           :reagent-render
+           (fn [mode* text*]
+             (swap! state (partial s/setval* :mode mode*))
+             [:> ace-editor
+              {:commands         [{:name    "`"
+                                   :bindKey "`"
+                                   :exec    aid/nop}
+                                  {:bindKey "l"
+                                   :exec    #(.insert (:editor @state)
+                                                      (aid/casep @state
+                                                        :backtick "\\lambda"
+                                                        "l"))}]
+               :focus            (= :insert mode*)
+               :keyboard-handler "vim"
+               :mode             "latex"
+               :on-change        #(insert-typing %)
+               :ref              #(if %
+                                    (swap! state
+                                           (partial s/setval*
+                                                    :editor
+                                                    (.-editor %))))
+               :style            {:font-size font-size
+                                  :height    "100%"
+                                  :width     "100%"}
+               :theme            "terminal"
+               :value            text*}])})))
 
 (defn math
   [s]
@@ -493,16 +633,24 @@
   (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
 
 (defn math-node
-  [[x y] s]
-  [:foreignObject {:x (* x cursor-size)
-                   :y (* y cursor-size)}
-   [math (align s)]])
+  [[[x y] s]]
+  [:> measure
+   {:bounds    true
+    :on-resize #(-> %
+                    .-bounds
+                    (js->clj :keywordize-keys true)
+                    bounds)}
+   #(r/as-element [:foreignObject {:x (* x cursor-size)
+                                   :y (* y cursor-size)}
+                   [:div {:ref   (.-measureRef %)
+                          :style {:display "inline-block"}}
+                    [math (align s)]]])])
 
 (def background-color
   "black")
 
 (def maximum-z-index
-  ;https://stackoverflow.com/questions/491052/minimum-and-maximum-value-of-z-index
+  ;https://stackoverflow.com/a/25461690
   2147483647)
 
 (def get-percent
@@ -523,82 +671,152 @@
    :position         "absolute"
    :z-index          maximum-z-index})
 
-(defn input-component
-  [_]
-  (r/create-class
-    {:component-did-update
-     #(-> %
-          r/dom-node
-          .focus)
-     :reagent-render
-     (fn [s]
-       [:input
-        {:on-change   #(-> %
-                           .-target.value
-                           command-typing)
-         :on-key-down #(-> %
-                           .-key
-                           command-keydown)
-         :style       (s/setval :width (get-percent left-pane) message-style)
-         :value       s}])}))
+(defc input-component
+      [_]
+      (r/create-class
+        {:component-did-update #(-> %
+                                    r/dom-node
+                                    .focus)
+         :reagent-render       (fn [s]
+                                 [:input
+                                  {:on-change   #(-> %
+                                                     .-target.value
+                                                     command-typing)
+                                   :on-key-down #(-> %
+                                                     .-key
+                                                     command-keydown)
+                                   :style       (s/setval
+                                                  :width
+                                                  (get-percent left-pane)
+                                                  message-style)
+                                   :value       s}])}))
 
-(defn command-component
-  [mode* command-text*]
-  [:form {:style     {:display (case mode*
-                                 :command "block"
-                                 "none")}
-          :on-submit #(submission command-text*)}
-   [input-component command-text*]])
+(defc command-component
+      [mode* command-text*]
+      [:form {:style     {:display (case mode*
+                                     :command "block"
+                                     "none")}
+              :on-submit #(submission command-text*)}
+       [input-component command-text*]])
 
-(defn graph-component
-  [current-node* x y]
-  (s/setval s/END
-            (mapv (comp vec
-                        (partial cons math-node))
-                  current-node*)
-            [:svg {:style {:height "100%"
-                           :width  "100%"}}
-             [:rect {:height cursor-size
-                     :stroke "red"
-                     :width  cursor-size
-                     :x      (* x cursor-size)
-                     :y      (* y cursor-size)}]]))
+(def memoized-keyword
+  (memoize cuerdas/keyword))
 
-(defn error-component
-  [error* editor-command*]
-  [:div {:style (merge message-style {:display (if (or (empty? error*)
-                                                       editor-command*)
-                                                 "none"
-                                                 "block")
-                                      :width   (get-percent right-pane)})}
-   error*])
+(aid/defcurried convert-keys
+  [ks x]
+  (->> ks
+       (mapcat (juxt memoized-keyword
+                     #(case (-> x
+                                (oget+ %)
+                                goog/typeOf)
+                        "function" (partial js-invoke x %)
+                        (oget+ x %))))
+       (apply hash-map)))
 
-(defn app-component
-  [opened* graph-view* command-view* editor-view* error-view*]
-  (s/setval s/BEGINNING
-            [:div {:style {:background-color background-color
-                           :color            "white"
-                           :display          "flex"
-                           :height           "100%"
-                           :overflow         "hidden"
-                           :width            "100%"}}]
-            (if opened*
-              [[:div {:style {:width (get-percent left-pane)}}
-                graph-view*
-                command-view*]
-               [:div {:style {:width (get-percent right-pane)}}
-                editor-view*
-                error-view*]]
-              [command-view*])))
+;(def convert-object
+;  (aid/build convert-keys
+;             object/getKeys
+;             identity))
+;
+;(def dom*
+;  (comp dom
+;        convert-object
+;        r/dom-node))
+;
+;=> @dom
+;#object[TypeError TypeError: Cannot convert a Symbol value to a string]
+(def dom*
+  (comp dom
+        (convert-keys #{"clientWidth"
+                        "clientHeight"})
+        r/dom-node))
+
+(defc nodes
+      [current-x-y*]
+      (->> current-x-y*
+           (mapv math-node)
+           (s/setval s/BEFORE-ELEM :g)))
+
+(defc graph-component
+      [& _]
+      (let [state (atom {})]
+        (r/create-class
+          {:component-did-mount  dom*
+           :component-did-update (fn [this]
+                                   (dom* this)
+                                   (-> this
+                                       r/dom-node
+                                       (.scrollTo (:x @state)
+                                                  (:y @state))))
+           :reagent-render       (fn [scroll-x*
+                                      scroll-y*
+                                      maximum-x
+                                      maximum-y
+                                      current-x-y*
+                                      cursor-x
+                                      cursor-y]
+                                   (swap! state (partial (aid/flip merge)
+                                                         {:x scroll-x*
+                                                          :y scroll-y*}))
+                                   [:div {:style {:overflow "scroll"
+                                                  :height   "100%"
+                                                  :width    "100%"}}
+                                    [:svg {:style {:height maximum-y
+                                                   :width  maximum-x}}
+                                     [:rect {:height cursor-size
+                                             :style  {:outline-color  "red"
+                                                      :outline-offset -1
+                                                      :outline-style  "solid"
+                                                      :outline-width  1}
+                                             :width  cursor-size
+                                             :x      (* cursor-x
+                                                        cursor-size)
+                                             :y      (* cursor-y
+                                                        cursor-size)}]
+                                     [nodes current-x-y*]]])})))
+
+(defc error-component
+      [error* editor-command*]
+      [:div {:style (merge message-style {:display (if (or (empty? error*)
+                                                           editor-command*)
+                                                     "none"
+                                                     "block")
+                                          :width   (get-percent right-pane)})}
+       error*])
+
+(defc app-component
+      [opened* graph-view* command-view* editor-view* error-view*]
+      (s/setval s/BEGINNING
+                [:div {:style {:background-color background-color
+                               :color            "white"
+                               :display          "flex"
+                               :height           "100%"
+                               :overflow         "hidden"
+                               :width            "100%"}}]
+                (if opened*
+                  [[:div {:style {:width (get-percent left-pane)}}
+                    graph-view*
+                    command-view*]
+                   [:div {:style {:width (get-percent right-pane)}}
+                    editor-view*
+                    error-view*]]
+                  [command-view*])))
 
 (def graph-view
-  ((aid/lift-a graph-component) current-node x-behavior y-behavior))
+  ((aid/lift-a graph-component)
+    current-scroll-x
+    current-scroll-y
+    maximum-x
+    maximum-y
+    current-x-y-behavior
+    cursor-x-behavior
+    cursor-y-behavior))
 
 (def command-view
   ((aid/lift-a command-component) mode command-text))
 
 (def editor-view
-  ((aid/lift-a (partial vector editor)) mode insert-text))
+  ((aid/lift-a editor) mode insert-text))
 
 (def error-view
   ((aid/lift-a error-component) error editor-command))
@@ -617,10 +835,14 @@
 
 (loop-event {loop-directory-event current-directory-path
              loop-file-path       current-file-path
-             loop-file            current-file})
+             loop-file            current-file
+             loop-scroll-x        current-scroll-x
+             loop-scroll-y        current-scroll-y})
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
+
+(oset! js/window "onsubmit" #(.preventDefault %))
 
 (defn bind
   [s e]
@@ -631,6 +853,7 @@
 
 (def keymap
   {":"      command
+   "^"      carrot
    "ctrl+r" redo
    "escape" normal-escape
    "h"      left
