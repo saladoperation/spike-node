@@ -43,6 +43,7 @@
           insert-typing
           command-typing
           bounds
+          implication
           submission
           undo
           redo)
@@ -855,6 +856,7 @@
 (def keymap
   {":"      command
    "^"      carrot
+   "\\"     implication
    "ctrl+r" redo
    "escape" normal-escape
    "h"      left
