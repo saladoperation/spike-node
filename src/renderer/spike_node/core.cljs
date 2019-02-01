@@ -782,9 +782,6 @@
         (partial s/setval* :style {:marker-end   "url(#arrow)"
                                    :stroke-width 1
                                    :stroke       "white"})
-        (partial s/transform*
-                 (s/multi-path :x1 :x2)
-                 (partial + (/ marker-size 2)))
         (partial zipmap [:x1 :y1 :x2 :y2])
         (partial map (partial * cursor-size))
         flatten))
