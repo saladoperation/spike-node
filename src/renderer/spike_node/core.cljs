@@ -257,7 +257,7 @@
        (m/<> (aid/<$ true valid))
        (frp/stepper false)))
 
-(defn make-transform-current-content
+(defn make-transform-current-node
   [x y s]
   (partial s/setval*
            [:node
@@ -275,7 +275,7 @@
   (->> (frp/snapshot (->> (frp/snapshot normal typed)
                           (core/filter last)
                           (m/<$> first))
-                     ((aid/lift-a make-transform-current-content)
+                     ((aid/lift-a make-transform-current-node)
                        cursor-x-behavior
                        cursor-y-behavior
                        (frp/stepper "" valid)))
