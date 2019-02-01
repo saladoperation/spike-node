@@ -765,6 +765,20 @@
            (mapv math-node)
            (s/setval s/BEFORE-ELEM :g)))
 
+(def edge
+  (comp (partial vector :line)
+        (partial s/setval* :style {:stroke-width 1
+                                   :stroke       "white"})
+        (partial zipmap [:x1 :y1 :x2 :y2])
+        (partial map (partial * cursor-size))
+        flatten))
+
+(defc edges-component
+      [edges*]
+      (->> edges*
+           (mapv edge)
+           (s/setval s/BEFORE-ELEM :g)))
+
 (def outline-width
   1)
 
@@ -784,6 +798,7 @@
                                       maximum-x
                                       maximum-y
                                       x-y*
+                                      edges*
                                       cursor-x
                                       cursor-y]
                                    (swap! state (partial (aid/flip merge)
@@ -802,7 +817,8 @@
                                              :width  cursor-size
                                              :x      (* cursor-x cursor-size)
                                              :y      (* cursor-y cursor-size)}]
-                                     [nodes x-y*]]])})))
+                                     [nodes x-y*]
+                                     [edges-component edges*]]])})))
 
 (defc error-component
       [error* editor-command*]
@@ -838,6 +854,7 @@
     maximum-x
     maximum-y
     x-y-behavior
+    edges
     cursor-x-behavior
     cursor-y-behavior))
 
