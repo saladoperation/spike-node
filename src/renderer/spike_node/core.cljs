@@ -660,22 +660,30 @@
 (def align
   (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
 
-(defn math-node
-  [[[x y] s]]
-  [:> measure
-   {:bounds    true
-    :on-resize #(-> %
-                    .-bounds
-                    (js->clj :keywordize-keys true)
-                    bounds)}
-   #(r/as-element [:foreignObject {:x (* x cursor-size)
-                                   :y (* y cursor-size)}
-                   [:div {:ref   (.-measureRef %)
-                          :style {:display "inline-block"}}
-                    [math (align s)]]])])
-
 (def background-color
   "black")
+
+(defn math-node
+  [& _]
+  (let [state (r/atom {})]
+    (fn [[[x y] s]]
+      [:g
+       [:rect (merge @state
+                     {:fill background-color
+                      :x    (* x cursor-size)
+                      :y    (* y cursor-size)})]
+       [:> measure
+        {:bounds    true
+         :on-resize #(-> %
+                         .-bounds
+                         (js->clj :keywordize-keys true)
+                         ((juxt bounds
+                                (partial reset! state))))}
+        #(r/as-element [:foreignObject {:x (* x cursor-size)
+                                        :y (* y cursor-size)}
+                        [:div {:ref   (.-measureRef %)
+                               :style {:display "inline-block"}}
+                         [math (align s)]]])]])))
 
 (def maximum-z-index
   ;https://stackoverflow.com/a/25461690
@@ -762,7 +770,7 @@
 (defc nodes
       [x-y*]
       (->> x-y*
-           (mapv math-node)
+           (mapv (partial vector math-node))
            (s/setval s/BEFORE-ELEM :g)))
 
 (def edge
@@ -809,6 +817,8 @@
                                                   :width    "100%"}}
                                     [:svg {:style {:height maximum-y
                                                    :width  maximum-x}}
+                                     [edges-component edges*]
+                                     [nodes x-y*]
                                      [:rect {:height cursor-size
                                              :style  {:outline-color  "red"
                                                       :outline-offset (- outline-width)
@@ -816,9 +826,7 @@
                                                       :outline-width  outline-width}
                                              :width  cursor-size
                                              :x      (* cursor-x cursor-size)
-                                             :y      (* cursor-y cursor-size)}]
-                                     [nodes x-y*]
-                                     [edges-component edges*]]])})))
+                                             :y      (* cursor-y cursor-size)}]]])})))
 
 (defc error-component
       [error* editor-command*]
