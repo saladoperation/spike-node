@@ -418,6 +418,13 @@
                              (aid/<$ :command command)
                              (aid/<$ :edge edge-node))))
 
+(def in
+  (->> mode
+       (frp/snapshot (core/distinct edge-node))
+       (core/filter (comp (partial = :edge)
+                          last))
+       (m/<$> first)))
+
 (def editor-command
   (->> editor-keyup
        (core/filter (partial = ":"))
