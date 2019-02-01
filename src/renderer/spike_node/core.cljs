@@ -850,15 +850,18 @@
                                               :fill "white"}]]
                                      [edges-component edges*]
                                      [nodes x-y*]
-                                     [:rect {:height  cursor-size
-                                             :style   {:outline-color  "red"
-                                                       :outline-offset (- outline-width)
-                                                       :outline-style  "solid"
-                                                       :outline-width  outline-width}
-                                             :opacity 0
-                                             :width   cursor-size
-                                             :x       (* cursor-x cursor-size)
-                                             :y       (* cursor-y cursor-size)}]]])})))
+                                     [:rect
+                                      {:height  cursor-size
+                                       :style   {:outline-color  "red"
+                                                 :outline-offset (-
+                                                                   outline-width)
+                                                 :outline-style  "solid"
+                                                 :outline-width  outline-width}
+                                       :opacity 0
+                                       :width   cursor-size
+                                       :x       (* cursor-x cursor-size)
+                                       :y       (* cursor-y
+                                                   cursor-size)}]]])})))
 
 (defc error-component
       [error* editor-command*]
