@@ -376,10 +376,7 @@
 
 (defn add-scroll
   [k0 k1 scroll bound]
-  (s/transform (s/multi-path k0
-                             k1)
-               (partial + scroll)
-               bound))
+  (s/transform (s/multi-path k0 k1) (partial + scroll) bound))
 
 (def valid-bounds
   (->> (frp/snapshot bounds
