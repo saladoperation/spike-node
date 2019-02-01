@@ -491,8 +491,11 @@
 (def initial-scroll
   0)
 
+(def marker-size
+  8)
+
 (def font-size
-  18)
+  (* 2 marker-size))
 
 (def cursor-size
   (* font-size 3))
@@ -775,8 +778,12 @@
 
 (def edge
   (comp (partial vector :line)
-        (partial s/setval* :style {:stroke-width 1
+        (partial s/setval* :style {:marker-end   "url(#arrow)"
+                                   :stroke-width 1
                                    :stroke       "white"})
+        (partial s/transform*
+                 (s/multi-path :x1 :x2)
+                 (partial + (/ marker-size 2)))
         (partial zipmap [:x1 :y1 :x2 :y2])
         (partial map (partial * cursor-size))
         flatten))
@@ -789,6 +796,21 @@
 
 (def outline-width
   1)
+
+(def ref-x
+  2)
+
+(def view-box
+  (->> ref-x
+       (repeat 2)
+       (concat (repeat 2 0))
+       (str/join " ")))
+
+(def ref-y
+  1)
+
+(def path-d
+  (str/join " " ["M 0 0 L" ref-x ref-y "L 0 " ref-x "z"]))
 
 (defc graph-component
       [& _]
@@ -817,6 +839,15 @@
                                                   :width    "100%"}}
                                     [:svg {:style {:height maximum-y
                                                    :width  maximum-x}}
+                                     [:marker {:id            "arrow"
+                                               :marker-width  marker-size
+                                               :marker-height marker-size
+                                               :orient        "auto"
+                                               :ref-x         ref-x
+                                               :ref-y         ref-y
+                                               :view-box      view-box}
+                                      [:path {:d    path-d
+                                              :fill "white"}]]
                                      [edges-component edges*]
                                      [nodes x-y*]
                                      [:rect {:height cursor-size
