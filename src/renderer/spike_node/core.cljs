@@ -328,9 +328,10 @@
   (m/<$> ffirst historical-content))
 
 (def edges
-  (m/<$> (comp graph/edges
-               :edge)
-         current-content))
+  (->> current-content
+       (m/<$> (comp graph/edges
+                    :edge))
+       (frp/stepper [])))
 
 (def x-y-event
   (->> (frp/snapshot valid
