@@ -23,7 +23,8 @@
             [spike-node.parse.core :as parse])
   (:require-macros [spike-node.core :refer [defc]]))
 
-(frp/defe loop-file
+(frp/defe loop-directory
+          loop-file
           loop-file-path
           loop-scroll-x
           loop-scroll-y
@@ -102,9 +103,6 @@
 
 (def default-path
   (path.join home "Documents"))
-
-(def loop-directory
-  (m/<$> fs/dirname loop-file-path))
 
 (def get-potential-path
   #(->>
