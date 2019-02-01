@@ -374,6 +374,14 @@
                             current-x-y-behavior]))
        (frp/stepper "")))
 
+(def out
+  (->> (frp/snapshot implication
+                     (m/<$> (partial not= "") insert-text)
+                     cursor-x-behavior
+                     cursor-y-behavior)
+       (core/filter second)
+       (m/<$> (partial drop 2))))
+
 (defn add-scroll
   [k0 k1 scroll bound]
   (s/transform (s/multi-path k0 k1) (partial + scroll) bound))
