@@ -424,15 +424,15 @@
 (def placeholder
   [])
 
-(def edge
+(def edge-addition
   (->> (frp/stepper placeholder edge-node)
        (frp/snapshot in)
        (m/<$> reverse)))
 
 (def sink-transform-edge
-  (m/<$> (fn [edge*]
-           (partial s/transform* :edge #(graph/add-edges % edge*)))
-         edge))
+  (m/<$> (fn [addition*]
+           (partial s/transform* :edge #(graph/add-edges % addition*)))
+         edge-addition))
 
 (def editor-command
   (->> editor-keyup
