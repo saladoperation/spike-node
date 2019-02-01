@@ -103,15 +103,13 @@
 (def default-path
   (path.join home "Documents"))
 
-(def loop-directory-event
+(def loop-directory
   (m/<$> fs/dirname loop-file-path))
-
-(def directory-behavior
-  (frp/stepper default-path loop-directory-event))
 
 (def get-potential-path
   #(->>
-     directory-behavior
+     loop-directory
+     (frp/stepper default-path)
      (frp/snapshot
        (->> submission
             (m/<$> parse-command)
@@ -163,7 +161,7 @@
                                      valid-file?))
                potential-file-path))
 
-(def current-directory-path
+(def current-directory
   (->> "cd"
        get-potential-path
        (core/filter fs/fexists?)
@@ -853,11 +851,11 @@
 (def loop-event
   (partial run! (partial apply frp/run)))
 
-(loop-event {loop-directory-event current-directory-path
-             loop-file-path       current-file-path
-             loop-file            current-file
-             loop-scroll-x        current-scroll-x
-             loop-scroll-y        current-scroll-y})
+(loop-event {loop-directory current-directory
+             loop-file-path current-file-path
+             loop-file      current-file
+             loop-scroll-x  current-scroll-x
+             loop-scroll-y  current-scroll-y})
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
