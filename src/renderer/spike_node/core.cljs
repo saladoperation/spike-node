@@ -810,7 +810,7 @@
   1)
 
 (def path-d
-  (str/join " " ["M 0 0 L" ref-x ref-y "L 0" ref-x "z"]))
+  (str/join " " ["M" 0 0 "L" ref-x ref-y "L" 0 ref-x "z"]))
 
 (defc graph-component
       [& _]
