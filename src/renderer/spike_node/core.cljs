@@ -668,15 +668,21 @@
 (def background-color
   "black")
 
+(def outline-width
+  1)
+
 (defn math-node
   [& _]
   (let [state (r/atom {})]
     (fn [[[x y] s]]
       [:g
        [:rect (merge @state
-                     {:fill background-color
-                      :x    (* x cursor-size)
-                      :y    (* y cursor-size)})]
+                     {:fill  background-color
+                      :x     (* x cursor-size)
+                      :y     (* y cursor-size)
+                      :style {:outline-color background-color
+                              :outline-style "solid"
+                              :outline-width outline-width}})]
        [:> measure
         {:bounds    true
          :on-resize #(-> %
@@ -792,9 +798,6 @@
       (->> edges*
            (mapv edge)
            (s/setval s/BEFORE-ELEM :g)))
-
-(def outline-width
-  1)
 
 (def ref-x
   2)
