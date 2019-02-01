@@ -845,13 +845,13 @@
     error-view))
 
 ;TODO don't use two events when ClojureScript supports lazy evaluation
-(def source-event
+(def loop-event
   (partial run! (partial apply frp/run)))
 
-(source-event {source-directory sink-directory
-               source-file      sink-file
-               source-scroll-x  sink-scroll-x
-               source-scroll-y  sink-scroll-y})
+(loop-event {source-directory sink-directory
+             source-file      sink-file
+             source-scroll-x  sink-scroll-x
+             source-scroll-y  sink-scroll-y})
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
