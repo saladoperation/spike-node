@@ -10,8 +10,15 @@
   :plugins [[lein-ancient "0.6.15"]
             [lein-cljsbuild "1.1.7"]]
   :source-paths ["src/helpers"]
-  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
-                                  [figwheel-sidecar "0.5.18"]]}}
+  :profiles {:dev      {:dependencies [[binaryage/devtools "0.9.10"]
+                                       [figwheel-sidecar "0.5.18"]]}
+             ;:renderer profile works around the following error in REPL.
+             ;----  Could not Analyze  src/renderer/spike_node/core.cljs  ----
+             ;
+             ;  Could not locate spike_node/core__init.class, spike_node/core.clj or spike_node/core.cljc on classpath. Please check that namespaces with dashes use underscores in the Clojure file name.
+             ;
+             ;----  Analysis Error : Please see src/renderer/spike_node/core.cljs  ----
+             :renderer {:source-paths ["src/renderer"]}}
   :cljsbuild {:builds
               {:builder   {:source-paths ["src/builder" "src/helpers"]
                            :compiler     {:output-to "target/main.js"
