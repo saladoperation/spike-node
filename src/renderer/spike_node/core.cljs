@@ -257,7 +257,7 @@
        (m/<> (aid/<$ true valid))
        (frp/stepper false)))
 
-(defn make-transform-current-node
+(defn make-transform-node
   [x y s]
   (partial s/setval*
            [:node
@@ -275,7 +275,7 @@
   (->> (frp/snapshot (->> (frp/snapshot normal typed)
                           (core/filter last)
                           (m/<$> first))
-                     ((aid/lift-a make-transform-current-node)
+                     ((aid/lift-a make-transform-node)
                        cursor-x-behavior
                        cursor-y-behavior
                        (frp/stepper "" valid)))
@@ -322,12 +322,12 @@
                                                              lfirst)))
                            redo))))
 
-(def current-node
+(def node
   (m/<$> (comp :node
                ffirst)
          content))
 
-(def current-x-y-event
+(def x-y-event
   (->> (frp/snapshot valid
                      cursor-x-behavior
                      cursor-y-behavior)
@@ -335,11 +335,11 @@
                 (partial s/setval* (s/keypath [x y]) s)))
        (m/<> (m/<$> (comp constantly
                           :x-y)
-                    current-node))
+                    node))
        (frp/accum {})))
 
-(def current-x-y-behavior
-  (frp/stepper {} current-x-y-event))
+(def x-y-behavior
+  (frp/stepper {} x-y-event))
 
 (aid/defcurried extract-insert
   [n coll]
@@ -362,10 +362,10 @@
   (->> insert-typing
        (m/<> (zip-entities (fn [[x y m]]
                              (get m [x y] ""))
-                           [cursor-x-event cursor-y-event current-x-y-event]
+                           [cursor-x-event cursor-y-event x-y-event]
                            [cursor-x-behavior
                             cursor-y-behavior
-                            current-x-y-behavior]))
+                            x-y-behavior]))
        (frp/stepper "")))
 
 (def edge-node
@@ -745,8 +745,8 @@
         r/dom-node))
 
 (defc nodes
-      [current-x-y*]
-      (->> current-x-y*
+      [x-y*]
+      (->> x-y*
            (mapv math-node)
            (s/setval s/BEFORE-ELEM :g)))
 
@@ -768,7 +768,7 @@
                                       scroll-y*
                                       maximum-x
                                       maximum-y
-                                      current-x-y*
+                                      x-y*
                                       cursor-x
                                       cursor-y]
                                    (swap! state (partial (aid/flip merge)
@@ -787,7 +787,7 @@
                                              :width  cursor-size
                                              :x      (* cursor-x cursor-size)
                                              :y      (* cursor-y cursor-size)}]
-                                     [nodes current-x-y*]]])})))
+                                     [nodes x-y*]]])})))
 
 (defc error-component
       [error* editor-command*]
@@ -822,7 +822,7 @@
     sink-scroll-y
     maximum-x
     maximum-y
-    current-x-y-behavior
+    x-y-behavior
     cursor-x-behavior
     cursor-y-behavior))
 
