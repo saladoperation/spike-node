@@ -737,6 +737,9 @@
            (mapv math-node)
            (s/setval s/BEFORE-ELEM :g)))
 
+(def outline-width
+  1)
+
 (defc graph-component
       [& _]
       (let [state (atom {})]
@@ -765,9 +768,9 @@
                                                    :width  maximum-x}}
                                      [:rect {:height cursor-size
                                              :style  {:outline-color  "red"
-                                                      :outline-offset -1
+                                                      :outline-offset (- outline-width)
                                                       :outline-style  "solid"
-                                                      :outline-width  1}
+                                                      :outline-width  outline-width}
                                              :width  cursor-size
                                              :x      (* cursor-x
                                                         cursor-size)
