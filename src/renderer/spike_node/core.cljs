@@ -239,7 +239,7 @@
                                      ffirst)
                                (comp exit?
                                      llast)))
-       (m/<> command-exit)))
+       (m/<> command-exit normal-escape)))
 
 (def undo-size
   10)
