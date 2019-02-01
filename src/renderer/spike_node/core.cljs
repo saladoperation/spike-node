@@ -673,10 +673,12 @@
 
 (defn math-node
   [& _]
-  (let [state (r/atom {})]
+  (let [state (r/atom {:height maximum-pixel})]
     (fn [[[x y] s]]
       [:g
-       [:rect (merge @state
+       [:rect (merge (s/transform :height
+                                  (partial (aid/flip -) (* 2 font-size))
+                                  @state)
                      {:fill  background-color
                       :x     (* x cursor-size)
                       :y     (* y cursor-size)
@@ -693,7 +695,8 @@
         #(r/as-element [:foreignObject {:x (* x cursor-size)
                                         :y (* y cursor-size)}
                         [:div {:ref   (.-measureRef %)
-                               :style {:display "inline-block"}}
+                               :style {:display    "inline-block"
+                                       :margin-top (- font-size)}}
                          [math (align s)]]])]])))
 
 (def maximum-z-index
