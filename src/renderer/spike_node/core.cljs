@@ -425,7 +425,8 @@
   [])
 
 (def edge-addition
-  (->> (frp/stepper placeholder edge-node)
+  (->> edge-node
+       (frp/stepper placeholder)
        (frp/snapshot in)
        (m/<$> reverse)))
 
