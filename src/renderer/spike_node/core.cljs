@@ -696,11 +696,11 @@
                                   (partial (aid/flip -) (* 2 font-size))
                                   @state)
                      {:fill  background-color
-                      :x     (get-cursor-pixel x)
-                      :y     (get-cursor-pixel y)
                       :style {:outline-color background-color
                               :outline-style "solid"
-                              :outline-width outline-width}})]
+                              :outline-width outline-width}
+                      :x     (get-cursor-pixel x)
+                      :y     (get-cursor-pixel y)})]
        [:> measure
         {:bounds    true
          :on-resize #(-> %
