@@ -287,7 +287,8 @@
                                              %
                                              identity)
                                   ffirst)
-                            (comp (partial s/transform*
+                            (comp (partial s/setval* s/LAST [])
+                                  (partial s/transform*
                                            s/FIRST
                                            (partial take undo-size))
                                   (aid/transfer* [s/FIRST s/BEFORE-ELEM]
