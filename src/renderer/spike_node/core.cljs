@@ -235,7 +235,7 @@
                                      ffirst)
                                (comp exit?
                                      llast)))
-       (m/<> command-exit normal-escape source-in)))
+       (m/<> command-exit normal-escape)))
 
 (def undo-size
   10)
@@ -415,17 +415,26 @@
        (m/<> command-typing)
        (frp/stepper "")))
 
-(def mode
-  (frp/stepper :normal (m/<> (aid/<$ :normal normal)
-                             (aid/<$ :insert (m/<> insert-normal insert-insert))
-                             (aid/<$ :command command)
-                             (aid/<$ :edge edge-node))))
+(def mode-event
+  (m/<> (aid/<$ :normal normal)
+        (aid/<$ :insert (m/<> insert-normal insert-insert))
+        (aid/<$ :command command)))
+
+(def mode-behavior
+  (frp/stepper :normal mode-event))
+
+(def edge-mode
+  (->> source-in
+       (m/<> mode-event
+             historical-content)
+       (aid/<$ false)
+       (m/<> (aid/<$ true edge-node))
+       (frp/stepper false)))
 
 (def sink-in
-  (->> mode
+  (->> edge-mode
        (frp/snapshot (core/dedupe edge-node))
-       (core/filter (comp (partial = :edge)
-                          last))
+       (core/filter last)
        (m/<$> first)))
 
 (def placeholder
@@ -911,10 +920,10 @@
     cursor-y-behavior))
 
 (def command-view
-  ((aid/lift-a command-component) mode command-text))
+  ((aid/lift-a command-component) mode-behavior command-text))
 
 (def editor-view
-  ((aid/lift-a editor) mode insert-text))
+  ((aid/lift-a editor) mode-behavior insert-text))
 
 (def error-view
   ((aid/lift-a error-component) error editor-command))
