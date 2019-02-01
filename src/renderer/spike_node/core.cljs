@@ -129,8 +129,7 @@
            {:readers {'spike-node.core.Table
                       (partial s/transform*
                                s/MAP-VALS
-                               (partial into
-                                        (sorted-map)))
+                               (partial into (sorted-map)))
                       'loom.graph.BasicEditableDigraph
                       (comp loom/digraph
                             :adj)}}))
