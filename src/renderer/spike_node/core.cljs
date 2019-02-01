@@ -855,8 +855,8 @@
                                    (swap! state (partial (aid/flip merge)
                                                          {:x scroll-x*
                                                           :y scroll-y*}))
-                                   [:div {:style {:overflow "scroll"
-                                                  :height   "100%"
+                                   [:div {:style {:height   "100%"
+                                                  :overflow "scroll"
                                                   :width    "100%"}}
                                     [:svg {:style {:height maximum-y
                                                    :width  maximum-x}}
