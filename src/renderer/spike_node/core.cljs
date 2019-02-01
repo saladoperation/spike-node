@@ -422,7 +422,7 @@
 
 (def sink-in
   (->> mode
-       (frp/snapshot (core/distinct edge-node))
+       (frp/snapshot (core/dedupe edge-node))
        (core/filter (comp (partial = :edge)
                           last))
        (m/<$> first)))
