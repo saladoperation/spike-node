@@ -25,7 +25,6 @@
 
 (frp/defe loop-directory
           loop-file
-          loop-file-path
           loop-scroll-x
           loop-scroll-y
           down
@@ -850,7 +849,6 @@
   (partial run! (partial apply frp/run)))
 
 (loop-event {loop-directory current-directory
-             loop-file-path current-file-path
              loop-file      current-file
              loop-scroll-x  current-scroll-x
              loop-scroll-y  current-scroll-y})
