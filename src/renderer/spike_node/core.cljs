@@ -873,12 +873,12 @@
                                      [nodes x-y*]
                                      [:rect
                                       {:height  cursor-size
+                                       :opacity 0
                                        :style   {:outline-color  "red"
                                                  :outline-offset (-
                                                                    outline-width)
                                                  :outline-style  "solid"
                                                  :outline-width  outline-width}
-                                       :opacity 0
                                        :width   cursor-size
                                        :x       (get-cursor-pixel cursor-x)
                                        :y       (get-cursor-pixel
