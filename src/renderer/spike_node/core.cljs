@@ -374,7 +374,7 @@
                             current-x-y-behavior]))
        (frp/stepper "")))
 
-(def out
+(def edge
   (->> (frp/snapshot implication
                      (m/<$> (partial not= "") insert-text)
                      cursor-x-behavior
@@ -414,7 +414,8 @@
 (def mode
   (frp/stepper :normal (m/<> (aid/<$ :normal normal)
                              (aid/<$ :insert (m/<> insert-normal insert-insert))
-                             (aid/<$ :command command))))
+                             (aid/<$ :command command)
+                             (aid/<$ :edge edge))))
 
 (def editor-command
   (->> editor-keyup
