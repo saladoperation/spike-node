@@ -23,10 +23,10 @@
             [spike-node.parse.core :as parse])
   (:require-macros [spike-node.core :refer [defc]]))
 
-(frp/defe loop-directory
-          loop-file
-          loop-scroll-x
-          loop-scroll-y
+(frp/defe source-directory
+          source-file
+          source-scroll-x
+          source-scroll-y
           down
           up
           left
@@ -105,7 +105,7 @@
 
 (def get-potential-path
   #(->>
-     loop-directory
+     source-directory
      (frp/stepper default-path)
      (frp/snapshot
        (->> submission
@@ -158,7 +158,7 @@
                                      valid-file?))
                potential-file-path))
 
-(def current-directory
+(def sink-directory
   (->> "cd"
        get-potential-path
        (core/filter fs/fexists?)
@@ -185,13 +185,13 @@
   (partial frp/stepper initial-cursor))
 
 (def cursor-x-event
-  (->> loop-file
+  (->> source-file
        (m/<$> :x)
        (m/<> (aid/<$ initial-cursor carrot))
        (get-cursor-event right left)))
 
 (def cursor-y-event
-  (->> loop-file
+  (->> source-file
        (m/<$> :y)
        (get-cursor-event down up)))
 
@@ -293,7 +293,7 @@
                identity))))
        (m/<> (m/<$> (comp constantly
                           :content)
-                    loop-file))))
+                    source-file))))
 
 (def multiton?
   (comp (partial < 1)
@@ -384,8 +384,8 @@
 
 (def valid-bounds
   (->> (frp/snapshot bounds
-                     (frp/stepper 0 loop-scroll-x)
-                     (frp/stepper 0 loop-scroll-y))
+                     (frp/stepper 0 source-scroll-x)
+                     (frp/stepper 0 source-scroll-y))
        (m/<$> (comp (aid/build hash-map
                                (juxt :left :top)
                                identity)
@@ -465,7 +465,7 @@
    :x       initial-cursor
    :y       initial-cursor})
 
-(def current-file
+(def sink-file
   (m/<$> (fn [[k m]]
            (get m k (aid/casep k
                       fs/fexists? (-> k
@@ -526,10 +526,10 @@
 (def maximum-y-bound
   (get-maximum-bound :bottom))
 
-(def current-scroll-x
+(def sink-scroll-x
   (get-scroll client-width maximum-x-bound cursor-x-event))
 
-(def current-scroll-y
+(def sink-scroll-y
   (get-scroll client-height maximum-y-bound cursor-y-event))
 
 (def get-pixel
@@ -545,13 +545,13 @@
 
 (def maximum-x
   (get-maximum client-width
-               current-scroll-x
+               sink-scroll-x
                maximum-x-bound
                cursor-x-behavior))
 
 (def maximum-y
   (get-maximum client-height
-               current-scroll-y
+               sink-scroll-y
                maximum-y-bound
                cursor-y-behavior))
 
@@ -819,8 +819,8 @@
 
 (def graph-view
   ((aid/lift-a graph-component)
-    current-scroll-x
-    current-scroll-y
+    sink-scroll-x
+    sink-scroll-y
     maximum-x
     maximum-y
     current-x-y-behavior
@@ -845,13 +845,13 @@
     error-view))
 
 ;TODO don't use two events when ClojureScript supports lazy evaluation
-(def loop-event
+(def source-event
   (partial run! (partial apply frp/run)))
 
-(loop-event {loop-directory current-directory
-             loop-file      current-file
-             loop-scroll-x  current-scroll-x
-             loop-scroll-y  current-scroll-y})
+(source-event {source-directory sink-directory
+               source-file      sink-file
+               source-scroll-x  sink-scroll-x
+               source-scroll-y  sink-scroll-y})
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
