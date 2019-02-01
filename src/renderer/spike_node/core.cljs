@@ -374,12 +374,13 @@
                             current-x-y-behavior]))
        (frp/stepper "")))
 
-(def edge
+(def edge-node
   (->> (frp/snapshot implication
-                     (m/<$> (partial not= "") insert-text)
+                     insert-text
                      cursor-x-behavior
                      cursor-y-behavior)
-       (core/filter second)
+       (core/filter (comp (partial not= "")
+                          second))
        (m/<$> (partial drop 2))))
 
 (defn add-scroll
@@ -415,7 +416,7 @@
   (frp/stepper :normal (m/<> (aid/<$ :normal normal)
                              (aid/<$ :insert (m/<> insert-normal insert-insert))
                              (aid/<$ :command command)
-                             (aid/<$ :edge edge))))
+                             (aid/<$ :edge edge-node))))
 
 (def editor-command
   (->> editor-keyup
