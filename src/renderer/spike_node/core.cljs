@@ -289,16 +289,27 @@
                    vector)
              (get-transform-node "")))
 
+(defn get-paste-action
+  [node-register predecessors sucessors x y]
+  (get-transform-node node-register x y))
+
 (def action
-  (->> (m/<> (frp/snapshot delete
-                           ((aid/lift-a get-delete-node)
-                             cursor-x-behavior
-                             cursor-y-behavior))
-             (frp/snapshot (->> (frp/snapshot normal typed)
+  (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
                                 (core/filter last)
                                 (m/<$> first))
                            ((aid/lift-a get-transform-node)
                              (frp/stepper "" valid)
+                             cursor-x-behavior
+                             cursor-y-behavior))
+             (frp/snapshot delete
+                           ((aid/lift-a get-delete-node)
+                             cursor-x-behavior
+                             cursor-y-behavior))
+             (frp/snapshot paste
+                           ((aid/lift-a get-paste-action)
+                             (frp/stepper "" source-node-register)
+                             (frp/stepper #{} source-predecessors-register)
+                             (frp/stepper #{} source-successors-register)
                              cursor-x-behavior
                              cursor-y-behavior)))
        (m/<$> last)
