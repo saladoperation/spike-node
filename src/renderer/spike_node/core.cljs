@@ -274,9 +274,17 @@
              empty? s/NONE
              s)))
 
+(def get-delete-node
+  (aid/build comp
+             (comp #(partial s/transform*
+                             :edge
+                             (partial (aid/flip graph/remove-nodes) %))
+                   vector)
+             (get-transform-node "")))
+
 (def action
   (->> (m/<> (frp/snapshot delete
-                           ((aid/lift-a (get-transform-node ""))
+                           ((aid/lift-a get-delete-node)
                              cursor-x-behavior
                              cursor-y-behavior))
              (frp/snapshot (->> (frp/snapshot normal typed)
