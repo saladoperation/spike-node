@@ -1039,6 +1039,8 @@
              source-successors-register   sink-successors-register
              source-transform-edge        sink-transform-edge})
 
+(frp/run #(oset! js/document "title" %) current-file-path)
+
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
 
