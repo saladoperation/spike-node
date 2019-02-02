@@ -34,6 +34,7 @@
           left
           right
           carrot
+          delete
           dom
           normal-escape
           insert-normal
@@ -974,7 +975,8 @@
    "k"      up
    "l"      right
    "space"  insert-normal
-   "u"      undo})
+   "u"      undo
+   "x"      delete})
 
 (bind-keymap keymap)
 
