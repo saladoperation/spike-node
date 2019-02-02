@@ -541,12 +541,6 @@
                   cursor-x-behavior
                   cursor-y-behavior)))
 
-(def file
-  (->> file-entry
-       (m/<$> (partial apply hash-map))
-       core/merge
-       (frp/stepper {})))
-
 (def modification
   (core/remove (fn [[path* m]]
                  (and (fs/fexists? path*)
@@ -562,13 +556,17 @@
    :y       initial-cursor})
 
 (def sink-file
-  (m/<$> (fn [[k m]]
-           (get m k (aid/casep k
-                      fs/fexists? (-> k
-                                      slurp
-                                      read-file)
-                      initial-file)))
-         (frp/snapshot current-file-path file)))
+  (->> file-entry
+       (m/<$> (partial apply hash-map))
+       core/merge
+       (frp/stepper {})
+       (frp/snapshot current-file-path)
+       (m/<$> (fn [[k m]]
+                (get m k (aid/casep k
+                           fs/fexists? (-> k
+                                           slurp
+                                           read-file)
+                           initial-file))))))
 
 (def initial-scroll
   0)
