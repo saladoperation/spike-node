@@ -260,8 +260,8 @@
        (m/<> (aid/<$ true valid))
        (frp/stepper false)))
 
-(defn make-transform-node
-  [x y s]
+(aid/defcurried get-transform-node
+  [s x y]
   (partial s/setval*
            [:node
             (s/multi-path [:y-x
@@ -276,17 +276,16 @@
 
 (def action
   (->> (m/<> (frp/snapshot delete
-                           ((aid/lift-a make-transform-node)
+                           ((aid/lift-a (get-transform-node ""))
                              cursor-x-behavior
-                             cursor-y-behavior
-                             (frp/behavior "")))
+                             cursor-y-behavior))
              (frp/snapshot (->> (frp/snapshot normal typed)
                                 (core/filter last)
                                 (m/<$> first))
-                           ((aid/lift-a make-transform-node)
+                           ((aid/lift-a get-transform-node)
+                             (frp/stepper "" valid)
                              cursor-x-behavior
-                             cursor-y-behavior
-                             (frp/stepper "" valid))))
+                             cursor-y-behavior)))
        (m/<$> last)
        (m/<> source-transform-edge)
        (m/<$> #(aid/if-else (comp (aid/build =
