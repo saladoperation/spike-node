@@ -35,6 +35,7 @@
           right
           carrot
           delete
+          paste
           dom
           normal-escape
           insert-normal
@@ -1014,6 +1015,7 @@
    "j"      down
    "k"      up
    "l"      right
+   "p"      paste
    "space"  insert-normal
    "u"      undo
    "x"      delete})
