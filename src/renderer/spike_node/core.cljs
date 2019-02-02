@@ -650,16 +650,10 @@
     (get-pixel cursor)))
 
 (def maximum-x
-  (get-maximum client-width
-               sink-scroll-x
-               maximum-x-bound
-               cursor-x-behavior))
+  (get-maximum client-width sink-scroll-x maximum-x-bound cursor-x-behavior))
 
 (def maximum-y
-  (get-maximum client-height
-               sink-scroll-y
-               maximum-y-bound
-               cursor-y-behavior))
+  (get-maximum client-height sink-scroll-y maximum-y-bound cursor-y-behavior))
 
 (aid/defcurried effect
   [f x]
