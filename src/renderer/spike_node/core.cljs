@@ -805,8 +805,7 @@
 ;#object[TypeError TypeError: Cannot convert a Symbol value to a string]
 (def dom*
   (comp dom
-        (convert-keys #{"clientWidth"
-                        "clientHeight"})
+        (convert-keys #{"clientWidth" "clientHeight"})
         r/dom-node))
 
 (defc nodes
