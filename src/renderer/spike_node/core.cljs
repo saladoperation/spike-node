@@ -26,8 +26,11 @@
 (frp/defe source-directory
           source-file
           source-in
+          source-node-register
+          source-predecessors-register
           source-scroll-x
           source-scroll-y
+          source-successors-register
           source-transform-edge
           down
           up
@@ -396,7 +399,7 @@
                             x-y-behavior]))
        (frp/stepper "")))
 
-(def node-register
+(def sink-node-register
   ;TODO take visual mode into account
   (->> insert-text
        (frp/snapshot delete)
@@ -406,7 +409,7 @@
 (def node-snapshot
   (->> edge
        (frp/stepper initial-edge)
-       (frp/snapshot node-register
+       (frp/snapshot sink-node-register
                      cursor-x-behavior
                      cursor-y-behavior)))
 
@@ -415,10 +418,10 @@
             (% edge* [x y]))
           node-snapshot))
 
-(def predecessors-register
+(def sink-predecessors-register
   (get-edge-register loom/predecessors))
 
-(def successors-register
+(def sink-successors-register
   (get-edge-register loom/successors))
 
 (def edge-node
@@ -985,12 +988,15 @@
 (def loop-event
   (partial run! (partial apply frp/run)))
 
-(loop-event {source-directory      sink-directory
-             source-file           sink-file
-             source-in             sink-in
-             source-scroll-x       sink-scroll-x
-             source-scroll-y       sink-scroll-y
-             source-transform-edge sink-transform-edge})
+(loop-event {source-directory             sink-directory
+             source-file                  sink-file
+             source-in                    sink-in
+             source-node-register         sink-node-register
+             source-predecessors-register sink-predecessors-register
+             source-scroll-x              sink-scroll-x
+             source-scroll-y              sink-scroll-y
+             source-successors-register   sink-successors-register
+             source-transform-edge        sink-transform-edge})
 
 (frp/run (partial (aid/flip r/render) (js/document.getElementById "app"))
          app-view)
