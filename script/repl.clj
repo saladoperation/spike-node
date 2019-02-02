@@ -1,6 +1,5 @@
 (ns repl
   (:require [figwheel-sidecar.repl-api :as repl-api]
-            [me.raynes.fs :as fs]
             [spike-node.helpers :as helpers]))
 
 (def argument

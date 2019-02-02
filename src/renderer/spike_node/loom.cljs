@@ -23,17 +23,17 @@
               ;; adacency map
               (map? init)
               (aid/casep init
-                         empty? g
-                         (let [es (if (map? (val (first init)))
-                                    (for [[n nbrs] init
-                                          [nbr wt] nbrs]
-                                      [n nbr wt])
-                                    (for [[n nbrs] init
-                                          nbr nbrs]
-                                      [n nbr]))]
-                           (-> g
-                               (graph/add-nodes* (keys init))
-                               (graph/add-edges* es))))
+                empty? g
+                (let [es (if (map? (val (first init)))
+                           (for [[n nbrs] init
+                                 [nbr wt] nbrs]
+                             [n nbr wt])
+                           (for [[n nbrs] init
+                                 nbr nbrs]
+                             [n nbr]))]
+                  (-> g
+                      (graph/add-nodes* (keys init))
+                      (graph/add-edges* es))))
               ;; edge
               (sequential? init) (graph/add-edges g init)
               ;; node
@@ -44,3 +44,13 @@
   [& inits]
   (with-redefs [graph/build-graph build-graph]
                (apply graph/digraph inits)))
+
+(def predecessors
+  (comp (aid/if-then nil?
+                     (constantly #{}))
+        graph/predecessors))
+
+(def successors
+  (comp (aid/if-then nil?
+                     (constantly #{}))
+        graph/successors))
