@@ -424,7 +424,7 @@
 (def sink-node-register
   ;TODO take visual mode into account
   (->> insert-text
-       (frp/snapshot delete)
+       (frp/snapshot (m/<> delete paste))
        (m/<$> last)
        (core/remove empty?)))
 
