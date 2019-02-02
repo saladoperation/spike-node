@@ -248,8 +248,13 @@
 (def undo-size
   10)
 
+(def align
+  (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
+
 (def get-error
-  #(try (do (js/katex.renderToString %)
+  #(try (do (-> %
+                align
+                js/katex.renderToString)
             "")
         (catch js/katex.ParseError error
           (str error))))
@@ -742,9 +747,6 @@
    {:dangerouslySetInnerHTML
     {:__html (js/katex.renderToString s
                                       #js {:displayMode true})}}])
-
-(def align
-  (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
 
 (def background-color
   "black")
