@@ -44,3 +44,13 @@
   [& inits]
   (with-redefs [graph/build-graph build-graph]
                (apply graph/digraph inits)))
+
+(def predecessors
+  (comp (aid/if-then nil?
+                     (constantly #{}))
+        graph/predecessors))
+
+(def successors
+  (comp (aid/if-then nil?
+                     (constantly #{}))
+        graph/successors))

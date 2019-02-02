@@ -209,9 +209,12 @@
 (def initial-table
   (->Table (sorted-map) (sorted-map)))
 
+(def initial-edge
+  (graph/digraph))
+
 (def initial-content
   [[{:node initial-table
-     :edge (graph/digraph)}]
+     :edge initial-edge}]
    []])
 
 (def exit?
@@ -342,10 +345,12 @@
 (def current-content
   (m/<$> ffirst historical-content))
 
+(def edge
+  (m/<$> :edge current-content))
+
 (def edges
-  (->> current-content
-       (m/<$> (comp graph/edges
-                    :edge))
+  (->> edge
+       (m/<$> graph/edges)
        (frp/stepper [])))
 
 (def x-y-event
@@ -396,6 +401,16 @@
        (frp/snapshot delete)
        (m/<$> last)
        (core/remove empty?)))
+
+(def edge-register
+  (->> edge
+       (frp/stepper initial-edge)
+       (frp/snapshot node-register
+                     cursor-x-behavior
+                     cursor-y-behavior)
+       (m/<$> (fn [[_ x y edge*]]
+                {:predecessors (loom/predecessors edge* [x y])
+                 :successors   (loom/successors edge* [x y])}))))
 
 (def edge-node
   (->> (frp/snapshot implication
@@ -821,7 +836,7 @@
            (mapv (partial vector math-node))
            (s/setval s/BEFORE-ELEM :g)))
 
-(def edge
+(def edge-component
   (comp (partial vector :line)
         (partial s/setval* :style {:marker-end   "url(#arrow)"
                                    :stroke-width 1
@@ -833,7 +848,7 @@
 (defc edges-component
       [edges*]
       (->> edges*
-           (mapv edge)
+           (mapv edge-component)
            (s/setval s/BEFORE-ELEM :g)))
 
 (def ref-x
