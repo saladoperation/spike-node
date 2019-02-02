@@ -275,13 +275,18 @@
              s)))
 
 (def action
-  (->> (frp/snapshot (->> (frp/snapshot normal typed)
-                          (core/filter last)
-                          (m/<$> first))
-                     ((aid/lift-a make-transform-node)
-                       cursor-x-behavior
-                       cursor-y-behavior
-                       (frp/stepper "" valid)))
+  (->> (m/<> (frp/snapshot delete
+                           ((aid/lift-a make-transform-node)
+                             cursor-x-behavior
+                             cursor-y-behavior
+                             (frp/behavior "")))
+             (frp/snapshot (->> (frp/snapshot normal typed)
+                                (core/filter last)
+                                (m/<$> first))
+                           ((aid/lift-a make-transform-node)
+                             cursor-x-behavior
+                             cursor-y-behavior
+                             (frp/stepper "" valid))))
        (m/<$> last)
        (m/<> source-transform-edge)
        (m/<$> #(aid/if-else (comp (aid/build =
