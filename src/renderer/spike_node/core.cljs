@@ -395,7 +395,7 @@
                      insert-text
                      cursor-x-behavior
                      cursor-y-behavior)
-       (core/remove (comp (partial = "")
+       (core/remove (comp empty?
                           second))
        (m/<$> (partial drop 2))))
 
