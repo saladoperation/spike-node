@@ -289,9 +289,20 @@
                    vector)
              (get-transform-node "")))
 
+(def get-nodes
+  (comp vector
+        vector))
+
 (defn get-paste-action
-  [node-register predecessors sucessors x y]
-  (get-transform-node node-register x y))
+  [node-register predecessors successors x y]
+  (comp (partial s/transform*
+                 :edge
+                 (partial (aid/flip graph/add-edges*)
+                          (concat (combo/cartesian-product predecessors
+                                                           (get-nodes x y))
+                                  (combo/cartesian-product (get-nodes x y)
+                                                           successors))))
+        (get-transform-node node-register x y)))
 
 (def action
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
