@@ -585,20 +585,6 @@
 (def initial-maximum
   0)
 
-(defn get-scroll
-  [client bound cursor]
-  (->> client
-       (frp/snapshot (m/<> bound cursor))
-       (core/reduce (fn [reduction [x view-size]]
-                      (-> reduction
-                          (max (-> x
-                                   inc
-                                   (* cursor-size)
-                                   (- view-size)))
-                          (min (* x cursor-size))))
-                    initial-scroll)
-       (frp/stepper initial-scroll)))
-
 (def maximum-pixel
   ;https://stackoverflow.com/a/16637689
   33554428)
@@ -624,6 +610,20 @@
 
 (def maximum-y-bound
   (get-maximum-bound :bottom))
+
+(defn get-scroll
+  [client bound cursor]
+  (->> client
+       (frp/snapshot (m/<> bound cursor))
+       (core/reduce (fn [reduction [x view-size]]
+                      (-> reduction
+                          (max (-> x
+                                   inc
+                                   (* cursor-size)
+                                   (- view-size)))
+                          (min (* x cursor-size))))
+                    initial-scroll)
+       (frp/stepper initial-scroll)))
 
 (def sink-scroll-x
   (get-scroll client-width maximum-x-bound cursor-x-event))
