@@ -455,11 +455,11 @@
                           second))
        (m/<$> (partial drop 2))))
 
-(def placeholder
+(def node-placeholder
   [])
 
 (def edge-node-behavior
-  (frp/stepper placeholder edge-node-event))
+  (frp/stepper node-placeholder edge-node-event))
 
 (defn add-scroll
   [k0 k1 scroll bound]
@@ -514,7 +514,7 @@
 
 (def additional-edge
   (->> edge-node-event
-       (frp/stepper placeholder)
+       (frp/stepper node-placeholder)
        (frp/snapshot sink-in)
        (m/<$> reverse)))
 
@@ -531,15 +531,17 @@
                     editor-keydown))
        (frp/stepper false)))
 
+(def file-path-placeholder
+  "")
+
 (def file-entry
-  (frp/snapshot (->> current-file-path
-                     (core/partition 2 1)
-                     (m/<$> first))
-                ((aid/lift-a (comp (partial zipmap [:content :x :y])
-                                   vector))
-                  (frp/stepper initial-content historical-content)
-                  cursor-x-behavior
-                  cursor-y-behavior)))
+  (->> current-file-path
+       (frp/stepper file-path-placeholder)
+       (frp/snapshot (m/<$> (partial zipmap [:content :x :y])
+                            (frp/snapshot historical-content
+                                          cursor-x-behavior
+                                          cursor-y-behavior)))
+       (m/<$> reverse)))
 
 (def modification
   (core/remove (fn [[path* m]]
