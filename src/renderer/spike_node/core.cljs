@@ -627,7 +627,7 @@
                           (max (-> x
                                    inc
                                    (* cursor-size)
-                                   (- view-size)))
+                                   (- (- view-size marker-size))))
                           (min (* x cursor-size))))
                     initial-scroll)
        (frp/stepper initial-scroll)))
@@ -759,7 +759,8 @@
   1)
 
 (def get-cursor-pixel
-  (partial * cursor-size))
+  (comp (partial + (/ marker-size 2))
+        (partial * cursor-size)))
 
 (defn get-node-color
   [mode* edge-node x-y]
