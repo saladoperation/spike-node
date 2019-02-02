@@ -452,8 +452,7 @@
        (m/<$> reverse)))
 
 (def sink-transform-edge
-  (m/<$> (fn [addition*]
-           (partial s/transform* :edge #(graph/add-edges % addition*)))
+  (m/<$> #(partial s/transform* :edge (partial (aid/flip graph/add-edges) %))
          additional-edge))
 
 (def editor-command
