@@ -402,15 +402,23 @@
        (m/<$> last)
        (core/remove empty?)))
 
-(def edge-register
+(def node-snapshot
   (->> edge
        (frp/stepper initial-edge)
        (frp/snapshot node-register
                      cursor-x-behavior
-                     cursor-y-behavior)
-       (m/<$> (fn [[_ x y edge*]]
-                {:predecessors (loom/predecessors edge* [x y])
-                 :successors   (loom/successors edge* [x y])}))))
+                     cursor-y-behavior)))
+
+(def get-edge-register
+  #(m/<$> (fn [[_ x y edge*]]
+            (% edge* [x y]))
+          node-snapshot))
+
+(def predecessors-register
+  (get-edge-register loom/predecessors))
+
+(def successors-register
+  (get-edge-register loom/successors))
 
 (def edge-node
   (->> (frp/snapshot implication
