@@ -466,20 +466,23 @@
   (s/transform (s/multi-path k0 k1) (partial + scroll) bound))
 
 (def valid-bounds
-  (->> (frp/snapshot bounds
+  (->> (frp/snapshot (m/<> bounds)
                      (frp/stepper 0 source-scroll-x)
                      (frp/stepper 0 source-scroll-y))
-       (m/<$> (comp (aid/build hash-map
-                               (juxt :left :top)
+       (m/<$> (comp (aid/flip (aid/curry 2 merge))
+                    (aid/build hash-map
+                               (juxt :x :y)
                                identity)
                     (fn [[bound scroll-x scroll-y]]
                       (->> bound
                            (add-scroll :left :right scroll-x)
                            (add-scroll :top :bottom scroll-y)))))
-       (core/reduce merge {})
-       (m/<$> (comp (partial remove (comp zero?
-                                          :width))
-                    vals))))
+       (m/<> (m/<$> (comp (aid/curry 2 s/select-one*)
+                          s/submap
+                          keys)
+                    x-y-event))
+       (frp/accum {})
+       (m/<$> vals)))
 
 (def error
   (m/<$> get-error insert-text))
@@ -792,7 +795,9 @@
          :on-resize #(-> %
                          .-bounds
                          (js->clj :keywordize-keys true)
-                         ((juxt bounds
+                         ((juxt (comp bounds
+                                      (partial merge {:x x
+                                                      :y y}))
                                 (partial reset! state))))}
         #(r/as-element [:foreignObject {:x (get-cursor-pixel x)
                                         :y (get-cursor-pixel y)}
