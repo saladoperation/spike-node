@@ -390,6 +390,13 @@
                             x-y-behavior]))
        (frp/stepper "")))
 
+(def node-register
+  ;TODO take visual mode into account
+  (->> insert-text
+       (frp/snapshot delete)
+       (m/<$> last)
+       (core/remove empty?)))
+
 (def edge-node
   (->> (frp/snapshot implication
                      insert-text
