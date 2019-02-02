@@ -395,7 +395,7 @@
                      insert-text
                      cursor-x-behavior
                      cursor-y-behavior)
-       (core/filter (comp (partial not= "")
+       (core/remove (comp (partial = "")
                           second))
        (m/<$> (partial drop 2))))
 
