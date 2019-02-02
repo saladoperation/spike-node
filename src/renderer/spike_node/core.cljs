@@ -762,8 +762,7 @@
   1)
 
 (def get-cursor-pixel
-  (comp (partial + (/ marker-size 2))
-        (partial * cursor-size)))
+  (partial * cursor-size))
 
 (defn get-node-color
   [mode* edge-node x-y]
