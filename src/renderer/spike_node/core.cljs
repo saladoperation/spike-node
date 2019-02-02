@@ -446,7 +446,7 @@
 (def sink-successors-register
   (get-edge-register loom/successors))
 
-(def edge-node
+(def edge-node-event
   (->> (frp/snapshot implication
                      insert-text
                      cursor-x-behavior
@@ -454,6 +454,12 @@
        (core/remove (comp empty?
                           second))
        (m/<$> (partial drop 2))))
+
+(def placeholder
+  [])
+
+(def edge-node-behavior
+  (frp/stepper placeholder edge-node-event))
 
 (defn add-scroll
   [k0 k1 scroll bound]
@@ -497,20 +503,17 @@
        (m/<> mode-event
              historical-content)
        (aid/<$ false)
-       (m/<> (aid/<$ true edge-node))
+       (m/<> (aid/<$ true edge-node-event))
        (frp/stepper false)))
 
 (def sink-in
   (->> edge-mode
-       (frp/snapshot (core/dedupe edge-node))
+       (frp/snapshot (core/dedupe edge-node-event))
        (core/filter last)
        (m/<$> first)))
 
-(def placeholder
-  [])
-
 (def additional-edge
-  (->> edge-node
+  (->> edge-node-event
        (frp/stepper placeholder)
        (frp/snapshot sink-in)
        (m/<$> reverse)))
@@ -745,6 +748,9 @@
 (def background-color
   "black")
 
+(def out-color
+  "grey")
+
 (def color
   "white")
 
@@ -755,16 +761,25 @@
   (comp (partial + (/ marker-size 2))
         (partial * cursor-size)))
 
+(defn get-node-color
+  [mode* edge-node x-y]
+  (if (and mode*
+           (= edge-node x-y))
+    out-color
+    background-color))
+
 (defn math-node
   [& _]
   (let [state (r/atom {:height maximum-pixel})]
-    (fn [[[x y] s]]
+    (fn [mode* edge-node [[x y :as coll] s]]
       [:g
        [:rect (merge (s/transform :height
                                   (partial (aid/flip -) (* 2 font-size))
                                   @state)
-                     {:fill  background-color
-                      :style {:outline-color background-color
+                     {:fill  (get-node-color mode* edge-node coll)
+                      :style {:outline-color (get-node-color mode*
+                                                             edge-node
+                                                             coll)
                               :outline-style "solid"
                               :outline-width outline-width}
                       :x     (get-cursor-pixel x)
@@ -865,9 +880,9 @@
         r/dom-node))
 
 (defc nodes
-      [x-y*]
+      [mode* edge-node x-y*]
       (->> x-y*
-           (mapv (partial vector math-node))
+           (mapv (partial vector math-node mode* edge-node))
            (s/setval s/BEFORE-ELEM :g)))
 
 (def edge-component
@@ -915,6 +930,8 @@
                                       scroll-y*
                                       maximum-x
                                       maximum-y
+                                      mode*
+                                      edge-node
                                       x-y*
                                       edges*
                                       cursor-x
@@ -937,7 +954,7 @@
                                       [:path {:d    path-d
                                               :fill color}]]
                                      [edges-component edges*]
-                                     [nodes x-y*]
+                                     [nodes mode* edge-node x-y*]
                                      [:rect
                                       {:height  cursor-size
                                        :opacity 0
@@ -984,6 +1001,8 @@
     sink-scroll-y
     maximum-x
     maximum-y
+    edge-mode
+    edge-node-behavior
     x-y-behavior
     edges
     cursor-x-behavior
