@@ -614,7 +614,11 @@
 (defn get-scroll
   [client bound cursor]
   (->> client
-       (frp/snapshot (m/<> bound cursor))
+       (frp/snapshot (->> cursor
+                          (frp/stepper initial-cursor)
+                          (frp/snapshot bound)
+                          (m/<$> (partial apply max))
+                          (m/<> cursor)))
        (core/reduce (fn [reduction [x view-size]]
                       (-> reduction
                           (max (-> x
