@@ -555,7 +555,7 @@
                                             get-left-top-line-segment)
                                       get-left-top-line-segment)))
 
-(def edges
+(def x-y-edge
   ((aid/lift-a (fn [m coll]
                  (->> coll
                       (map (aid/if-then-else (partial every? m)
@@ -1094,7 +1094,7 @@
     edge-mode
     edge-node-behavior
     x-y-behavior
-    edges
+    x-y-edge
     cursor-x-behavior
     cursor-y-behavior))
 
