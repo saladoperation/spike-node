@@ -555,7 +555,8 @@
 (def get-corner-line-segment
   (aid/build (partial map aid/funcall)
              (comp (partial apply map juxt)
-                   (partial map (aid/flip aid/funcall) [[:right :left] [:bottom :top]])
+                   (partial map (aid/flip aid/funcall) [[:right :left]
+                                                        [:bottom :top]])
                    (partial map #(if %
                                    identity
                                    reverse))
