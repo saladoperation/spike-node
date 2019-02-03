@@ -563,9 +563,7 @@
                            (partial map (juxt :x :y))
                            (partial map
                                     (comp (partial s/transform*
-                                                   (s/multi-path :bottom
-                                                                 :height
-                                                                 :top)
+                                                   :top
                                                    (partial + marker-size))
                                           (partial s/transform*
                                                    (s/multi-path :bottom
