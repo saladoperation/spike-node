@@ -526,17 +526,24 @@
 (def shrink
   (partial (aid/flip -) (* 2 font-size)))
 
-(def get-line
+(def get-left-top
+  (juxt :left :top))
+
+(aid/defcurried get-intersection-line-segment
+  [f [out in]]
+  [(f out)
+   (geom/intersect-line (rect/rect (:left in)
+                                   (:top in)
+                                   (:width in)
+                                   (:height in))
+                        (line/line2 (f out)
+                                    (f in)))])
+
+(def get-line-segment
   (aid/if-then-else oblique?
-                    (fn [[out in]]
-                      [(get-center out)
-                       (geom/intersect-line (rect/rect (:left in)
-                                                       (:top in)
-                                                       (:width in)
-                                                       (:height in))
-                                            (line/line2 (get-center out)
-                                                        (get-center in)))])
-                    (partial map (juxt :left :top))))
+                    ;TODO connect the closest pair of corners
+                    (get-intersection-line-segment get-center)
+                    (get-intersection-line-segment get-left-top)))
 
 (def edges
   ((aid/lift-a
@@ -545,7 +552,7 @@
             (map (aid/if-then-else (partial every? m)
                                    (aid/build hash-map
                                               identity
-                                              (comp get-line
+                                              (comp get-line-segment
                                                     (partial map m)))
                                    (constantly {})))
             (apply merge))))
