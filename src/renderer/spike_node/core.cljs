@@ -29,6 +29,7 @@
 (frp/defe source-directory
           source-file
           source-in
+          source-line-segment
           source-node-register
           source-predecessors-register
           source-scroll-x
@@ -609,6 +610,9 @@
          (m/<$> graph/edges)
          (frp/stepper []))))
 
+(def sink-line-segment
+  (m/<$> (partial s/transform* s/MAP-VALS line/line2) x-y-edge))
+
 (def error
   (m/<$> get-error insert-text))
 
@@ -1158,6 +1162,7 @@
 (loop-event {source-directory             sink-directory
              source-file                  sink-file
              source-in                    sink-in
+             source-line-segment          sink-line-segment
              source-node-register         sink-node-register
              source-predecessors-register sink-predecessors-register
              source-scroll-x              sink-scroll-x
