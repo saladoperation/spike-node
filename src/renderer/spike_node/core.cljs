@@ -384,6 +384,9 @@
        (m/<$> graph/edges)
        (frp/stepper [])))
 
+(def initial-x-y
+  {})
+
 (def x-y-event
   (->> (frp/snapshot valid
                      cursor-x-behavior
@@ -394,10 +397,10 @@
                           :x-y
                           :node)
                     current-content))
-       (frp/accum {})))
+       (frp/accum initial-x-y)))
 
 (def x-y-behavior
-  (frp/stepper {} x-y-event))
+  (frp/stepper initial-x-y x-y-event))
 
 (aid/defcurried extract-insert
   [n coll]
