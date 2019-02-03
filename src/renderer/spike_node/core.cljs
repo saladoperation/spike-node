@@ -706,7 +706,7 @@
   (get-maximum-bound :bottom))
 
 (defn get-scroll
-  [client bound cursor]
+  [client bound offset cursor]
   (->> client
        (frp/snapshot (->> cursor
                           (frp/stepper initial-cursor)
@@ -718,16 +718,16 @@
                           (max (-> x
                                    inc
                                    (* cursor-size)
-                                   (- (- view-size marker-size))))
+                                   (- (- view-size offset))))
                           (min (* x cursor-size))))
                     initial-scroll)
        (frp/stepper initial-scroll)))
 
 (def sink-scroll-x
-  (get-scroll client-width maximum-x-bound cursor-x-event))
+  (get-scroll client-width maximum-x-bound marker-size cursor-x-event))
 
 (def sink-scroll-y
-  (get-scroll client-height maximum-y-bound cursor-y-event))
+  (get-scroll client-height maximum-y-bound 0 cursor-y-event))
 
 (def get-pixel
   (partial m/<$> (comp (partial * cursor-size)
@@ -846,7 +846,7 @@
 (def outline-width
   1)
 
-(def get-cursor-pixel
+(def get-x-cursor-pixel
   (comp (partial + (/ marker-size 2))
         (partial * cursor-size)))
 
@@ -869,8 +869,8 @@
                                                              coll)
                               :outline-style "solid"
                               :outline-width outline-width}
-                      :x     (get-cursor-pixel x)
-                      :y     (get-cursor-pixel y)})]
+                      :x     (get-x-cursor-pixel x)
+                      :y     (* y cursor-size)})]
        [:> measure
         {:bounds    true
          :on-resize #(-> %
@@ -880,8 +880,8 @@
                                       (partial merge {:x x
                                                       :y y}))
                                 (partial reset! state))))}
-        #(r/as-element [:foreignObject {:x (get-cursor-pixel x)
-                                        :y (get-cursor-pixel y)}
+        #(r/as-element [:foreignObject {:x (get-x-cursor-pixel x)
+                                        :y (* y cursor-size)}
                         [:div {:ref   (.-measureRef %)
                                :style {:display       "inline-block"
                                        :margin-bottom (- marker-size)
@@ -1055,9 +1055,8 @@
                                                  :outline-style  "solid"
                                                  :outline-width  outline-width}
                                        :width   cursor-size
-                                       :x       (get-cursor-pixel cursor-x)
-                                       :y       (get-cursor-pixel
-                                                  cursor-y)}]]])})))
+                                       :x       (get-x-cursor-pixel cursor-x)
+                                       :y       (* cursor-y cursor-size)}]]])})))
 
 (defc error-component
       [error* editor-command*]
