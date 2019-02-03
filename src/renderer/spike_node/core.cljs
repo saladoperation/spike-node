@@ -541,11 +541,19 @@
                         (line/line2 (f out)
                                     (f in)))])
 
+(def get-left-top-line-segment
+  (get-intersection-line-segment get-left-top))
+
 (def get-line-segment
   (aid/if-then-else oblique?
                     ;TODO connect the closest pair of corners
                     (get-intersection-line-segment get-center)
-                    (get-intersection-line-segment get-left-top)))
+                    (aid/if-then-else horizontal?
+                                      (comp (partial s/transform*
+                                                     [s/ALL s/LAST]
+                                                     (partial + font-size))
+                                            get-left-top-line-segment)
+                                      get-left-top-line-segment)))
 
 (def edges
   ((aid/lift-a (fn [m coll]
