@@ -18,6 +18,9 @@
             [loom.graph :as graph]
             [oops.core :refer [oget+ oset!]]
             [reagent.core :as r]
+            [thi.ng.geom.line :as line]
+            [thi.ng.geom.rect :as rect]
+            [thi.ng.geom.core :as geom]
             [spike-node.helpers :as helpers]
             [spike-node.loom :as loom]
             [spike-node.parse.core :as parse])
@@ -379,11 +382,6 @@
 (def edge
   (m/<$> :edge current-content))
 
-(def edges
-  (->> edge
-       (m/<$> graph/edges)
-       (frp/stepper [])))
-
 (def initial-x-y
   {})
 
@@ -492,6 +490,83 @@
        (frp/accum {})
        (m/<$> vals)))
 
+(def make-directional
+  #(comp (partial apply =)
+         (partial map %)))
+
+(def horizontal?
+  (make-directional :y))
+
+(def vertical?
+  (make-directional :x))
+
+(def oblique?
+  (complement (aid/build or
+                         horizontal?
+                         vertical?)))
+
+(def mean
+  (aid/build /
+             (partial apply +)
+             count))
+
+(def get-center
+  (comp (partial map mean)
+        (juxt (juxt :left
+                    :right)
+              (juxt :top
+                    :bottom))))
+
+(def marker-size
+  8)
+
+(def font-size
+  (* 2 marker-size))
+
+(def shrink
+  (partial (aid/flip -) (* 2 font-size)))
+
+(def get-line
+  (aid/if-then-else oblique?
+                    (fn [[out in]]
+                      [(get-center out)
+                       (geom/intersect-line (rect/rect (:left in)
+                                                       (:top in)
+                                                       (:width in)
+                                                       (:height in))
+                                            (line/line2 (get-center out)
+                                                        (get-center in)))])
+                    (partial map (juxt :left :top))))
+
+(def edges
+  ((aid/lift-a
+     (fn [m coll]
+       (->> coll
+            (map (aid/if-then-else (partial every? m)
+                                   (aid/build hash-map
+                                              identity
+                                              (comp get-line
+                                                    (partial map m)))
+                                   (constantly {})))
+            (apply merge))))
+    (->> valid-bounds
+         (m/<$> (aid/build zipmap
+                           (partial map (juxt :x :y))
+                           (partial map
+                                    (comp (partial s/transform*
+                                                   (s/multi-path :bottom
+                                                                 :height
+                                                                 :top)
+                                                   (partial + marker-size))
+                                          (partial s/transform*
+                                                   (s/multi-path :bottom
+                                                                 :height)
+                                                   shrink)))))
+         (frp/stepper {}))
+    (->> edge
+         (m/<$> graph/edges)
+         (frp/stepper []))))
+
 (def error
   (m/<$> get-error insert-text))
 
@@ -583,12 +658,6 @@
 
 (def initial-scroll
   0)
-
-(def marker-size
-  8)
-
-(def font-size
-  (* 2 marker-size))
 
 (def cursor-size
   (* font-size 3))
@@ -779,9 +848,7 @@
   (let [state (r/atom {:height maximum-pixel})]
     (fn [mode* edge-node [[x y :as coll] s]]
       [:g
-       [:rect (merge (s/transform :height
-                                  (partial (aid/flip -) (* 2 font-size))
-                                  @state)
+       [:rect (merge (s/transform :height shrink @state)
                      {:fill  (get-node-color mode* edge-node coll)
                       :style {:outline-color (get-node-color mode*
                                                              edge-node
@@ -896,12 +963,13 @@
 
 (def edge-component
   (comp (partial vector :line)
+        ;TODO add :on-click
         (partial s/setval* :style {:marker-end   "url(#arrow)"
                                    :stroke-width 1
                                    :stroke       color})
         (partial zipmap [:x1 :y1 :x2 :y2])
-        (partial map get-cursor-pixel)
-        flatten))
+        flatten
+        last))
 
 (defc edges-component
       [edges*]
