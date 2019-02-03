@@ -532,10 +532,12 @@
 (aid/defcurried get-intersection-line-segment
   [f [out in]]
   [(f out)
-   (geom/intersect-line (rect/rect (:left in)
-                                   (:top in)
-                                   (:width in)
-                                   (:height in))
+   (geom/intersect-line ((aid/build rect/rect
+                                    :left
+                                    :top
+                                    :width
+                                    :height)
+                          in)
                         (line/line2 (f out)
                                     (f in)))])
 
