@@ -591,7 +591,7 @@
                                                         (comp get-line-segment
                                                               (partial map m)))
                                              (constantly {})))
-                      (apply merge))))
+                      (apply merge {}))))
     (->> valid-bounds
          (m/<$> (aid/build zipmap
                            (partial map (juxt :x :y))
