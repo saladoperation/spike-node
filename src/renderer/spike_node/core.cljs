@@ -733,13 +733,21 @@
 (def maximum-y-bound
   (get-maximum-bound :bottom))
 
+(def opening
+  (->> (aid/<$ true source-file)
+       (m/<> (aid/<$ false (m/<> action valid-expression)))
+       (frp/stepper true)))
+
 (defn get-scroll
   [client bound offset cursor]
   (->> client
        (frp/snapshot (->> cursor
                           (frp/stepper initial-cursor)
-                          (frp/snapshot bound)
-                          (m/<$> (partial apply max))
+                          (frp/snapshot bound opening)
+                          (m/<$> (fn [[bound* opening* cursor*]]
+                                   (if opening*
+                                     cursor*
+                                     (max bound* cursor*))))
                           (m/<> cursor)))
        (core/reduce (fn [reduction [x view-size]]
                       (-> reduction
