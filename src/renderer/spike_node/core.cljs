@@ -802,8 +802,9 @@
         #(r/as-element [:foreignObject {:x (get-cursor-pixel x)
                                         :y (get-cursor-pixel y)}
                         [:div {:ref   (.-measureRef %)
-                               :style {:display    "inline-block"
-                                       :margin-top (- font-size)}}
+                               :style {:display       "inline-block"
+                                       :margin-bottom (- marker-size)
+                                       :margin-top    (- marker-size)}}
                          [math (align s)]]])]])))
 
 (def maximum-z-index
