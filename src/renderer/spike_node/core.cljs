@@ -544,16 +544,42 @@
 (def get-left-top-line-segment
   (get-intersection-line-segment get-left-top))
 
+(def get-direction
+  (partial apply map (comp neg?
+                           -)))
+
+(def get-left-top-direction
+  (comp get-direction
+        (partial map get-left-top)))
+
+(def get-corner-line-segment
+  (aid/build (partial map aid/funcall)
+             (comp (partial apply map juxt)
+                   (partial map (aid/flip aid/funcall) [[:right :left] [:bottom :top]])
+                   (partial map #(if %
+                                   identity
+                                   reverse))
+                   get-left-top-direction)
+             identity))
+
+(def corners?
+  (aid/build =
+             get-left-top-direction
+             (comp get-direction
+                   get-corner-line-segment)))
+
 (def get-line-segment
-  (aid/if-then-else oblique?
-                    ;TODO connect the closest pair of corners
-                    (get-intersection-line-segment get-center)
-                    (aid/if-then-else horizontal?
-                                      (comp (partial s/transform*
-                                                     [s/ALL s/LAST]
-                                                     (partial + font-size))
-                                            get-left-top-line-segment)
-                                      get-left-top-line-segment)))
+  (aid/if-then-else
+    oblique?
+    (aid/if-then-else corners?
+                      get-corner-line-segment
+                      (get-intersection-line-segment get-center))
+    (aid/if-then-else horizontal?
+                      (comp (partial s/transform*
+                                     [s/ALL s/LAST]
+                                     (partial + font-size))
+                            get-left-top-line-segment)
+                      get-left-top-line-segment)))
 
 (def x-y-edge
   ((aid/lift-a (fn [m coll]
@@ -570,7 +596,8 @@
                            (partial map (juxt :x :y))
                            (partial map
                                     (comp (partial s/transform*
-                                                   :top
+                                                   (s/multi-path :top
+                                                                 :bottom)
                                                    (partial + marker-size))
                                           (partial s/transform*
                                                    (s/multi-path :bottom
