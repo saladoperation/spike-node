@@ -313,12 +313,47 @@
                                                            successors))))
         (get-transform-node node-register x y)))
 
+(def marker-size
+  8)
+
+(def font-size
+  (* 2 marker-size))
+
+(def cursor-size
+  (* font-size 3))
+
+(def get-x-cursor-pixel
+  (comp (partial + (/ marker-size 2))
+        (partial * cursor-size)))
+
+(defn get-delete-edge
+  [m x y]
+  (aid/if-else
+    (partial s/select-one* [:node :x-y (s/keypath [x y])])
+    (partial
+      s/transform*
+      :edge
+      (partial (aid/flip graph/remove-edges*)
+               (->> m
+                    (filter (comp (partial geom/intersect-line
+                                           (rect/rect (get-x-cursor-pixel x)
+                                                      (* y cursor-size)
+                                                      cursor-size
+                                                      cursor-size))
+                                  val))
+                    (map first))))))
+
 (def action
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
                                 (core/filter last)
                                 (m/<$> first))
                            ((aid/lift-a get-transform-node)
                              (frp/stepper "" valid-expression)
+                             cursor-x-behavior
+                             cursor-y-behavior))
+             (frp/snapshot delete
+                           ((aid/lift-a get-delete-edge)
+                             (frp/stepper {} source-line-segment)
                              cursor-x-behavior
                              cursor-y-behavior))
              (frp/snapshot delete
@@ -518,12 +553,6 @@
               (juxt :top
                     :bottom))))
 
-(def marker-size
-  8)
-
-(def font-size
-  (* 2 marker-size))
-
 (def shrink
   (partial (aid/flip -) (* 2 font-size)))
 
@@ -705,9 +734,6 @@
 (def initial-scroll
   0)
 
-(def cursor-size
-  (* font-size 3))
-
 (def initial-maximum
   0)
 
@@ -885,10 +911,6 @@
 
 (def outline-width
   1)
-
-(def get-x-cursor-pixel
-  (comp (partial + (/ marker-size 2))
-        (partial * cursor-size)))
 
 (defn get-node-color
   [mode* edge-node x-y]
