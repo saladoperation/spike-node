@@ -266,13 +266,13 @@
   (comp empty?
         get-error))
 
-(def valid
+(def valid-expression
   (core/filter valid-expression? insert-typing))
 
 (def typed
   (->> (m/<> cursor-x-event cursor-y-event)
        (aid/<$ false)
-       (m/<> (aid/<$ true valid))
+       (m/<> (aid/<$ true valid-expression))
        (frp/stepper false)))
 
 (aid/defcurried get-transform-node
@@ -317,7 +317,7 @@
                                 (core/filter last)
                                 (m/<$> first))
                            ((aid/lift-a get-transform-node)
-                             (frp/stepper "" valid)
+                             (frp/stepper "" valid-expression)
                              cursor-x-behavior
                              cursor-y-behavior))
              (frp/snapshot delete
@@ -386,7 +386,7 @@
   {})
 
 (def x-y-event
-  (->> (frp/snapshot valid
+  (->> (frp/snapshot valid-expression
                      cursor-x-behavior
                      cursor-y-behavior)
        (m/<$> (fn [[s x y]]
