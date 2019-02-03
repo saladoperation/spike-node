@@ -548,16 +548,15 @@
                     (get-intersection-line-segment get-left-top)))
 
 (def edges
-  ((aid/lift-a
-     (fn [m coll]
-       (->> coll
-            (map (aid/if-then-else (partial every? m)
-                                   (aid/build hash-map
-                                              identity
-                                              (comp get-line-segment
-                                                    (partial map m)))
-                                   (constantly {})))
-            (apply merge))))
+  ((aid/lift-a (fn [m coll]
+                 (->> coll
+                      (map (aid/if-then-else (partial every? m)
+                                             (aid/build hash-map
+                                                        identity
+                                                        (comp get-line-segment
+                                                              (partial map m)))
+                                             (constantly {})))
+                      (apply merge))))
     (->> valid-bounds
          (m/<$> (aid/build zipmap
                            (partial map (juxt :x :y))
