@@ -136,14 +136,14 @@
      core/dedupe))
 
 (def read-file
-  (partial edn/read-string
-           {:readers {'spike-node.core.Table
-                      (partial s/transform*
-                               s/MAP-VALS
-                               (partial into (sorted-map)))
-                      'loom.graph.BasicEditableDigraph
-                      (comp loom/digraph
-                            :adj)}}))
+  (partial
+    edn/read-string
+    {:readers
+     {'spike-node.core.Table           (partial s/transform*
+                                                s/MAP-VALS
+                                                (partial into (sorted-map)))
+      'loom.graph.BasicEditableDigraph (comp loom/digraph
+                                             :adj)}}))
 
 (def edn?
   #(try (do (read-file %)
