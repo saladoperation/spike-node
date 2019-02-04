@@ -27,7 +27,7 @@
   (:require-macros [spike-node.core :refer [defc]]))
 
 (frp/defe source-directory
-          source-file
+          source-buffer
           source-in
           source-line-segment
           source-node-register
@@ -195,13 +195,13 @@
   (partial frp/stepper initial-cursor))
 
 (def cursor-x-event
-  (->> source-file
+  (->> source-buffer
        (m/<$> :x)
        (m/<> (aid/<$ initial-cursor carrot))
        (get-cursor-event right left)))
 
 (def cursor-y-event
-  (->> source-file
+  (->> source-buffer
        (m/<$> :y)
        (get-cursor-event down up)))
 
@@ -382,7 +382,7 @@
                                                        ffirst)))))
        (m/<> (m/<$> (comp constantly
                           :content)
-                    source-file))))
+                    source-buffer))))
 
 (def multiton?
   (comp (partial < 1)
@@ -695,7 +695,7 @@
 (def file-path-placeholder
   "")
 
-(def file-entry
+(def buffer-entry
   (->> current-file-path
        (frp/stepper file-path-placeholder)
        (frp/snapshot (m/<$> (partial zipmap [:content :x :y])
@@ -711,15 +711,15 @@
                           slurp
                           read-file
                           (= m))))
-               file-entry))
+               buffer-entry))
 
-(def initial-file
+(def initial-buffer
   {:content initial-content
    :x       initial-cursor
    :y       initial-cursor})
 
-(def sink-file
-  (->> file-entry
+(def sink-buffer
+  (->> buffer-entry
        (m/<$> (partial apply hash-map))
        core/merge
        (frp/stepper {})
@@ -729,7 +729,7 @@
                            fs/fexists? (-> k
                                            slurp
                                            read-file)
-                           initial-file))))))
+                           initial-buffer))))))
 
 (def initial-scroll
   0)
@@ -764,7 +764,7 @@
   (get-maximum-bound :bottom))
 
 (def opening
-  (->> (aid/<$ true source-file)
+  (->> (aid/<$ true source-buffer)
        (m/<> (aid/<$ false (m/<> action valid-expression)))
        (frp/stepper true)))
 
@@ -1182,7 +1182,7 @@
   (partial run! (partial apply frp/run)))
 
 (loop-event {source-directory             sink-directory
-             source-file                  sink-file
+             source-buffer                sink-buffer
              source-in                    sink-in
              source-line-segment          sink-line-segment
              source-node-register         sink-node-register
