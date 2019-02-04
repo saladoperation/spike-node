@@ -508,7 +508,7 @@
   (s/transform (s/multi-path k0 k1) (partial + scroll) bound))
 
 (def valid-bounds
-  (->> (frp/snapshot (m/<> bounds)
+  (->> (frp/snapshot bounds
                      (frp/stepper 0 source-scroll-x)
                      (frp/stepper 0 source-scroll-y))
        (m/<$> (comp (aid/flip (aid/curry 2 merge))
