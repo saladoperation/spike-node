@@ -26,8 +26,8 @@
             [spike-node.parse.core :as parse])
   (:require-macros [spike-node.core :refer [defc]]))
 
-(frp/defe source-directory
-          source-buffer
+(frp/defe source-buffer
+          source-directory
           source-in
           source-line-segment
           source-node-register
