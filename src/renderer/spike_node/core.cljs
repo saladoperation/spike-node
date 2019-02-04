@@ -220,11 +220,6 @@
 (def initial-edge
   (graph/digraph))
 
-(def initial-content
-  [[{:node initial-table
-     :edge initial-edge}]
-   []])
-
 (def exit?
   #{"Control" "Escape"})
 
@@ -381,7 +376,7 @@
                                                  (comp %
                                                        ffirst)))))
        (m/<> (m/<$> (comp constantly
-                          :content)
+                          :history)
                     source-buffer))))
 
 (def multiton?
@@ -392,8 +387,16 @@
   (comp first
         last))
 
-(def historical-content
-  (frp/accum initial-content
+(def get-history
+  (comp (partial (aid/flip vector) [])
+        vector))
+
+(def initial-history
+  (get-history {:node initial-table
+                :edge initial-edge}))
+
+(def history
+  (frp/accum initial-history
              (m/<> action
                    (aid/<$ (aid/if-then (comp multiton?
                                               first)
@@ -412,11 +415,11 @@
                                                              lfirst)))
                            redo))))
 
-(def current-content
-  (m/<$> ffirst historical-content))
+(def content
+  (m/<$> ffirst history))
 
 (def edge
-  (m/<$> :edge current-content))
+  (m/<$> :edge content))
 
 (def initial-x-y
   {})
@@ -430,7 +433,7 @@
        (m/<> (m/<$> (comp constantly
                           :x-y
                           :node)
-                    current-content))
+                    content))
        (frp/accum initial-x-y)))
 
 (def x-y-behavior
@@ -661,8 +664,7 @@
 
 (def edge-mode
   (->> source-in
-       (m/<> mode-event
-             historical-content)
+       (m/<> mode-event history)
        (aid/<$ false)
        (m/<> (aid/<$ true edge-node-event))
        (frp/stepper false)))
@@ -698,23 +700,32 @@
 (def buffer-entry
   (->> current-file-path
        (frp/stepper file-path-placeholder)
-       (frp/snapshot (m/<$> (partial zipmap [:content :x :y])
-                            (frp/snapshot historical-content
+       (frp/snapshot (m/<$> (partial zipmap [:history :x :y])
+                            (frp/snapshot history
                                           cursor-x-behavior
                                           cursor-y-behavior)))
        (m/<$> reverse)))
 
+(aid/defcurried move*
+  [to from f m]
+  (->> m
+       (aid/transfer* to
+                      (comp f
+                            (partial s/select-one* from)))
+       (s/setval from s/NONE)))
+
 (def modification
-  (core/remove (fn [[path* m]]
-                 (and (fs/fexists? path*)
-                      (-> path*
-                          slurp
-                          read-file
-                          (= m))))
-               buffer-entry))
+  (->> buffer-entry
+       (m/<$> (partial s/transform* s/LAST (move* :content :history ffirst)))
+       (core/remove (fn [[path* m]]
+                      (and (fs/fexists? path*)
+                           (-> path*
+                               slurp
+                               read-file
+                               (= m)))))))
 
 (def initial-buffer
-  {:content initial-content
+  {:history initial-history
    :x       initial-cursor
    :y       initial-cursor})
 
@@ -725,11 +736,13 @@
        (frp/stepper {})
        (frp/snapshot current-file-path)
        (m/<$> (fn [[k m]]
-                (get m k (aid/casep k
-                           fs/fexists? (-> k
-                                           slurp
-                                           read-file)
-                           initial-buffer))))))
+                (aid/casep k
+                  fs/fexists? (->> k
+                                   slurp
+                                   read-file
+                                   (move* :history :content get-history)
+                                   (get m k))
+                  initial-buffer)))))
 
 (def initial-scroll
   0)
