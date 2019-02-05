@@ -408,7 +408,7 @@
                                                         s/BEFORE-ELEM]
                                                        ffirst)))
                      undo)
-             (aid/<$ (aid/if-then (comp not-empty
+             (aid/<$ (aid/if-else (comp empty?
                                         last)
                                   (comp (partial s/transform* s/LAST rest)
                                         (aid/transfer* [s/FIRST
