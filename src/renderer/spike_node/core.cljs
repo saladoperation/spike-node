@@ -374,10 +374,7 @@
                                            (partial take undo-size))
                                   (aid/transfer* [s/FIRST s/BEFORE-ELEM]
                                                  (comp %
-                                                       ffirst)))))
-       (m/<> (m/<$> (comp constantly
-                          :history)
-                    source-buffer))))
+                                                       ffirst)))))))
 
 (def multiton?
   (comp (partial < 1)
@@ -395,25 +392,31 @@
   (get-history {:node initial-table
                 :edge initial-edge}))
 
+(def reset
+  (m/<$> (comp constantly
+               :history)
+         source-buffer))
+
 (def history
-  (frp/accum initial-history
-             (m/<> action
-                   (aid/<$ (aid/if-then (comp multiton?
-                                              first)
-                                        (comp (partial s/transform*
-                                                       s/FIRST
-                                                       rest)
-                                              (aid/transfer* [s/LAST
-                                                              s/BEFORE-ELEM]
-                                                             ffirst)))
-                           undo)
-                   (aid/<$ (aid/if-then (comp not-empty
-                                              last)
-                                        (comp (partial s/transform* s/LAST rest)
-                                              (aid/transfer* [s/FIRST
-                                                              s/BEFORE-ELEM]
-                                                             lfirst)))
-                           redo))))
+  (->> action
+       (m/<> (aid/<$ (aid/if-then (comp multiton?
+                                        first)
+                                  (comp (partial s/transform*
+                                                 s/FIRST
+                                                 rest)
+                                        (aid/transfer* [s/LAST
+                                                        s/BEFORE-ELEM]
+                                                       ffirst)))
+                     undo)
+             (aid/<$ (aid/if-then (comp not-empty
+                                        last)
+                                  (comp (partial s/transform* s/LAST rest)
+                                        (aid/transfer* [s/FIRST
+                                                        s/BEFORE-ELEM]
+                                                       lfirst)))
+                     redo)
+             reset)
+       (frp/accum initial-history)))
 
 (def content
   (m/<$> ffirst history))
