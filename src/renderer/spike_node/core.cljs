@@ -1088,9 +1088,12 @@
       [& _]
       (let [state (atom {})]
         (r/create-class
-          {:component-did-mount  dom*
-           :component-did-update (fn [this]
+          {:component-did-mount  (fn [this]
                                    (dom* this)
+                                   (js/window.addEventListener "resize"
+                                                               (fn [_]
+                                                                 (dom* this))))
+           :component-did-update (fn [this]
                                    (-> this
                                        r/dom-node
                                        (.scrollTo (:x @state)
