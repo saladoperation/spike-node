@@ -1250,6 +1250,7 @@
                                                     ["<Esc>"]
                                                     ["insert" "command"])))
 
+;TODO move this call down
 (frp/activate)
 
 (run! submission config-commands)
