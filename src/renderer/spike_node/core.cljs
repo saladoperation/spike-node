@@ -767,17 +767,40 @@
        (m/<$> :client-height)
        (frp/stepper maximum-pixel)))
 
-(def get-maximum-bound
+(def editing-bound
+  (->> (frp/snapshot valid-bounds
+                     cursor-x-behavior
+                     cursor-y-behavior)
+       (core/partition 2 1)
+       (core/filter (comp (partial apply =)
+                          (partial map rest)))
+       (m/<$> last)
+       (m/<> (m/<$> rest
+                    (frp/snapshot insert-insert
+                                  (frp/stepper [] valid-bounds)
+                                  cursor-x-behavior
+                                  cursor-y-behavior)))
+       (m/<$> (fn [[m x y]]
+                (->> m
+                     (filter (comp (partial = x)
+                                   :x))
+                     (filter (comp (partial = y)
+                                   :y))
+                     (aid/if-then-else empty?
+                                       (constantly {})
+                                       first))))))
+
+(def get-editing-bound
   #(m/<$> (comp (partial (aid/flip quot) cursor-size)
-                (partial apply max initial-maximum)
-                (partial map %))
-          valid-bounds))
+                (partial max initial-maximum)
+                %)
+          editing-bound))
 
-(def maximum-x-bound
-  (get-maximum-bound :right))
+(def editing-x-bound
+  (get-editing-bound :right))
 
-(def maximum-y-bound
-  (get-maximum-bound :bottom))
+(def editing-y-bound
+  (get-editing-bound :bottom))
 
 (def opening
   (->> (aid/<$ true source-buffer)
@@ -806,10 +829,10 @@
        (frp/stepper initial-scroll)))
 
 (def sink-scroll-x
-  (get-scroll client-width maximum-x-bound marker-size cursor-x-event))
+  (get-scroll client-width editing-x-bound marker-size cursor-x-event))
 
 (def sink-scroll-y
-  (get-scroll client-height maximum-y-bound 0 cursor-y-event))
+  (get-scroll client-height editing-y-bound 0 cursor-y-event))
 
 (def get-pixel
   (partial m/<$> (comp (partial * cursor-size)
@@ -823,10 +846,10 @@
     (get-pixel cursor)))
 
 (def maximum-x
-  (get-maximum client-width sink-scroll-x maximum-x-bound cursor-x-behavior))
+  (get-maximum client-width sink-scroll-x editing-x-bound cursor-x-behavior))
 
 (def maximum-y
-  (get-maximum client-height sink-scroll-y maximum-y-bound cursor-y-behavior))
+  (get-maximum client-height sink-scroll-y editing-y-bound cursor-y-behavior))
 
 (aid/defcurried effect
   [f x]
