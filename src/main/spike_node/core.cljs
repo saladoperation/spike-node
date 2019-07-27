@@ -46,4 +46,3 @@
 (.on app "will-finish-launching" #(.on app "open-file" (comp file-path
                                                              last
                                                              vector)))
-

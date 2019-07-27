@@ -18,14 +18,18 @@
             [loom.graph :as graph]
             [oops.core :refer [oget+ oset!]]
             [reagent.core :as r]
+            [thi.ng.geom.line :as line]
+            [thi.ng.geom.rect :as rect]
+            [thi.ng.geom.core :as geom]
             [spike-node.helpers :as helpers]
             [spike-node.loom :as loom]
             [spike-node.parse.core :as parse])
   (:require-macros [spike-node.core :refer [defc]]))
 
-(frp/defe source-directory
-          source-file
+(frp/defe source-buffer
+          source-directory
           source-in
+          source-line-segment
           source-node-register
           source-predecessors-register
           source-scroll-x
@@ -132,14 +136,14 @@
      core/dedupe))
 
 (def read-file
-  (partial edn/read-string
-           {:readers {'spike-node.core.Table
-                      (partial s/transform*
-                               s/MAP-VALS
-                               (partial into (sorted-map)))
-                      'loom.graph.BasicEditableDigraph
-                      (comp loom/digraph
-                            :adj)}}))
+  (partial
+    edn/read-string
+    {:readers
+     {'spike-node.core.Table           (partial s/transform*
+                                                s/MAP-VALS
+                                                (partial into (sorted-map)))
+      'loom.graph.BasicEditableDigraph (comp loom/digraph
+                                             :adj)}}))
 
 (def edn?
   #(try (do (read-file %)
@@ -191,13 +195,13 @@
   (partial frp/stepper initial-cursor))
 
 (def cursor-x-event
-  (->> source-file
+  (->> source-buffer
        (m/<$> :x)
        (m/<> (aid/<$ initial-cursor carrot))
        (get-cursor-event right left)))
 
 (def cursor-y-event
-  (->> source-file
+  (->> source-buffer
        (m/<$> :y)
        (get-cursor-event down up)))
 
@@ -215,11 +219,6 @@
 
 (def initial-edge
   (graph/digraph))
-
-(def initial-content
-  [[{:node initial-table
-     :edge initial-edge}]
-   []])
 
 (def exit?
   #{"Control" "Escape"})
@@ -248,8 +247,13 @@
 (def undo-size
   10)
 
+(def align
+  (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
+
 (def get-error
-  #(try (do (js/katex.renderToString %)
+  #(try (do (-> %
+                align
+                js/katex.renderToString)
             "")
         (catch js/katex.ParseError error
           (str error))))
@@ -258,13 +262,13 @@
   (comp empty?
         get-error))
 
-(def valid
+(def valid-expression
   (core/filter valid-expression? insert-typing))
 
 (def typed
   (->> (m/<> cursor-x-event cursor-y-event)
        (aid/<$ false)
-       (m/<> (aid/<$ true valid))
+       (m/<> (aid/<$ true valid-expression))
        (frp/stepper false)))
 
 (aid/defcurried get-transform-node
@@ -304,12 +308,47 @@
                                                            successors))))
         (get-transform-node node-register x y)))
 
+(def marker-size
+  8)
+
+(def font-size
+  (* 2 marker-size))
+
+(def cursor-size
+  (* font-size 3))
+
+(def get-x-cursor-pixel
+  (comp (partial + (/ marker-size 2))
+        (partial * cursor-size)))
+
+(defn get-delete-edge
+  [m x y]
+  (aid/if-else
+    (partial s/select-one* [:node :x-y (s/keypath [x y])])
+    (partial
+      s/transform*
+      :edge
+      (partial (aid/flip graph/remove-edges*)
+               (->> m
+                    (filter (comp (partial geom/intersect-line
+                                           (rect/rect (get-x-cursor-pixel x)
+                                                      (* y cursor-size)
+                                                      cursor-size
+                                                      cursor-size))
+                                  val))
+                    (map first))))))
+
 (def action
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
                                 (core/filter last)
                                 (m/<$> first))
                            ((aid/lift-a get-transform-node)
-                             (frp/stepper "" valid)
+                             (frp/stepper "" valid-expression)
+                             cursor-x-behavior
+                             cursor-y-behavior))
+             (frp/snapshot delete
+                           ((aid/lift-a get-delete-edge)
+                             (frp/stepper {} source-line-segment)
                              cursor-x-behavior
                              cursor-y-behavior))
              (frp/snapshot delete
@@ -335,10 +374,7 @@
                                            (partial take undo-size))
                                   (aid/transfer* [s/FIRST s/BEFORE-ELEM]
                                                  (comp %
-                                                       ffirst)))))
-       (m/<> (m/<$> (comp constantly
-                          :content)
-                    source-file))))
+                                                       ffirst)))))))
 
 (def multiton?
   (comp (partial < 1)
@@ -348,39 +384,51 @@
   (comp first
         last))
 
-(def historical-content
-  (frp/accum initial-content
-             (m/<> action
-                   (aid/<$ (aid/if-then (comp multiton?
-                                              first)
-                                        (comp (partial s/transform*
-                                                       s/FIRST
-                                                       rest)
-                                              (aid/transfer* [s/LAST
-                                                              s/BEFORE-ELEM]
-                                                             ffirst)))
-                           undo)
-                   (aid/<$ (aid/if-then (comp not-empty
-                                              last)
-                                        (comp (partial s/transform* s/LAST rest)
-                                              (aid/transfer* [s/FIRST
-                                                              s/BEFORE-ELEM]
-                                                             lfirst)))
-                           redo))))
+(def get-history
+  (comp (partial (aid/flip vector) [])
+        vector))
 
-(def current-content
-  (m/<$> ffirst historical-content))
+(def initial-history
+  (get-history {:node initial-table
+                :edge initial-edge}))
+
+(def reset
+  (m/<$> (comp constantly
+               :history)
+         source-buffer))
+
+(def history
+  (->> action
+       (m/<> (aid/<$ (aid/if-then (comp multiton?
+                                        first)
+                                  (comp (partial s/transform*
+                                                 s/FIRST
+                                                 rest)
+                                        (aid/transfer* [s/LAST
+                                                        s/BEFORE-ELEM]
+                                                       ffirst)))
+                     undo)
+             (aid/<$ (aid/if-else (comp empty?
+                                        last)
+                                  (comp (partial s/transform* s/LAST rest)
+                                        (aid/transfer* [s/FIRST
+                                                        s/BEFORE-ELEM]
+                                                       lfirst)))
+                     redo)
+             reset)
+       (frp/accum initial-history)))
+
+(def content
+  (m/<$> ffirst history))
 
 (def edge
-  (m/<$> :edge current-content))
+  (m/<$> :edge content))
 
-(def edges
-  (->> edge
-       (m/<$> graph/edges)
-       (frp/stepper [])))
+(def initial-x-y
+  {})
 
 (def x-y-event
-  (->> (frp/snapshot valid
+  (->> (frp/snapshot valid-expression
                      cursor-x-behavior
                      cursor-y-behavior)
        (m/<$> (fn [[s x y]]
@@ -388,11 +436,11 @@
        (m/<> (m/<$> (comp constantly
                           :x-y
                           :node)
-                    current-content))
-       (frp/accum {})))
+                    content))
+       (frp/accum initial-x-y)))
 
 (def x-y-behavior
-  (frp/stepper {} x-y-event))
+  (frp/stepper initial-x-y x-y-event))
 
 (aid/defcurried extract-insert
   [n coll]
@@ -455,11 +503,11 @@
                           second))
        (m/<$> (partial drop 2))))
 
-(def placeholder
+(def node-placeholder
   [])
 
 (def edge-node-behavior
-  (frp/stepper placeholder edge-node-event))
+  (frp/stepper node-placeholder edge-node-event))
 
 (defn add-scroll
   [k0 k1 scroll bound]
@@ -469,17 +517,136 @@
   (->> (frp/snapshot bounds
                      (frp/stepper 0 source-scroll-x)
                      (frp/stepper 0 source-scroll-y))
-       (m/<$> (comp (aid/build hash-map
-                               (juxt :left :top)
+       (m/<$> (comp (aid/flip (aid/curry 2 merge))
+                    (aid/build hash-map
+                               (juxt :x :y)
                                identity)
                     (fn [[bound scroll-x scroll-y]]
                       (->> bound
                            (add-scroll :left :right scroll-x)
                            (add-scroll :top :bottom scroll-y)))))
-       (core/reduce merge {})
-       (m/<$> (comp (partial remove (comp zero?
-                                          :width))
-                    vals))))
+       (m/<> (m/<$> (comp (aid/curry 2 s/select-one*)
+                          s/submap
+                          keys)
+                    x-y-event))
+       (frp/accum {})
+       (m/<$> vals)))
+
+(def make-directional
+  #(comp (partial apply =)
+         (partial map %)))
+
+(def horizontal?
+  (make-directional :y))
+
+(def vertical?
+  (make-directional :x))
+
+(def oblique?
+  (complement (aid/build or
+                         horizontal?
+                         vertical?)))
+
+(def mean
+  (aid/build /
+             (partial apply +)
+             count))
+
+(def get-center
+  (comp (partial map mean)
+        (juxt (juxt :left
+                    :right)
+              (juxt :top
+                    :bottom))))
+
+(def shrink
+  (partial (aid/flip -) (* 2 font-size)))
+
+(def get-left-top
+  (juxt :left :top))
+
+(aid/defcurried get-intersection-line-segment
+  [f [out in]]
+  [(f out)
+   (geom/intersect-line ((aid/build rect/rect
+                                    :left
+                                    :top
+                                    :width
+                                    :height)
+                          in)
+                        (line/line2 (f out)
+                                    (f in)))])
+
+(def get-left-top-line-segment
+  (get-intersection-line-segment get-left-top))
+
+(def get-direction
+  (partial apply map (comp neg?
+                           -)))
+
+(def get-left-top-direction
+  (comp get-direction
+        (partial map get-left-top)))
+
+(def get-corner-line-segment
+  (aid/build (partial map aid/funcall)
+             (comp (partial apply map juxt)
+                   (partial map (aid/flip aid/funcall) [[:right :left]
+                                                        [:bottom :top]])
+                   (partial map #(if %
+                                   identity
+                                   reverse))
+                   get-left-top-direction)
+             identity))
+
+(def corners?
+  (aid/build =
+             get-left-top-direction
+             (comp get-direction
+                   get-corner-line-segment)))
+
+(def get-line-segment
+  (aid/if-then-else
+    oblique?
+    (aid/if-then-else corners?
+                      get-corner-line-segment
+                      (get-intersection-line-segment get-center))
+    (aid/if-then-else horizontal?
+                      (comp (partial s/transform*
+                                     [s/ALL s/LAST]
+                                     (partial + font-size))
+                            get-left-top-line-segment)
+                      get-left-top-line-segment)))
+
+(def x-y-edge
+  ((aid/lift-a (fn [m coll]
+                 (->> coll
+                      (map (aid/if-then-else (partial every? m)
+                                             (aid/build hash-map
+                                                        identity
+                                                        (comp get-line-segment
+                                                              (partial map m)))
+                                             (constantly {})))
+                      (apply merge {}))))
+    (->> valid-bounds
+         (m/<$> (aid/build zipmap
+                           (partial map (juxt :x :y))
+                           (partial map
+                                    (comp (partial s/transform*
+                                                   (s/multi-path :top
+                                                                 :bottom)
+                                                   (partial + marker-size))
+                                          (partial s/transform*
+                                                   (s/multi-path :bottom
+                                                                 :height)
+                                                   shrink)))))
+         (frp/stepper {}))
+    (->> edge
+         (m/<$> graph/edges)
+         (frp/stepper []))))
+
+(def sink-line-segment
+  (m/<$> (partial s/transform* s/MAP-VALS line/line2) x-y-edge))
 
 (def error
   (m/<$> get-error insert-text))
@@ -500,8 +667,7 @@
 
 (def edge-mode
   (->> source-in
-       (m/<> mode-event
-             historical-content)
+       (m/<> mode-event history)
        (aid/<$ false)
        (m/<> (aid/<$ true edge-node-event))
        (frp/stepper false)))
@@ -514,7 +680,7 @@
 
 (def additional-edge
   (->> edge-node-event
-       (frp/stepper placeholder)
+       (frp/stepper node-placeholder)
        (frp/snapshot sink-in)
        (m/<$> reverse)))
 
@@ -531,73 +697,61 @@
                     editor-keydown))
        (frp/stepper false)))
 
-(def file-entry
-  (frp/snapshot (->> current-file-path
-                     (core/partition 2 1)
-                     (m/<$> first))
-                ((aid/lift-a (comp (partial zipmap [:content :x :y])
-                                   vector))
-                  (frp/stepper initial-content historical-content)
-                  cursor-x-behavior
-                  cursor-y-behavior)))
+(def file-path-placeholder
+  "")
 
-(def file
-  (->> file-entry
-       (m/<$> (partial apply hash-map))
-       core/merge
-       (frp/stepper {})))
+(def buffer-entry
+  (->> current-file-path
+       (frp/stepper file-path-placeholder)
+       (frp/snapshot (m/<$> (partial zipmap [:history :x :y])
+                            (frp/snapshot history
+                                          cursor-x-behavior
+                                          cursor-y-behavior)))
+       (m/<$> reverse)))
+
+(aid/defcurried move*
+  [to from f m]
+  (->> m
+       (aid/transfer* to
+                      (comp f
+                            (partial s/select-one* from)))
+       (s/setval from s/NONE)))
 
 (def modification
-  (core/remove (fn [[path* m]]
-                 (and (fs/fexists? path*)
-                      (-> path*
-                          slurp
-                          read-file
-                          (= m))))
-               file-entry))
+  (->> buffer-entry
+       (m/<$> (partial s/transform* s/LAST (move* :content :history ffirst)))
+       (core/remove (fn [[path* m]]
+                      (and (fs/fexists? path*)
+                           (-> path*
+                               slurp
+                               read-file
+                               (= m)))))))
 
-(def initial-file
-  {:content initial-content
+(def initial-buffer
+  {:history initial-history
    :x       initial-cursor
    :y       initial-cursor})
 
-(def sink-file
-  (m/<$> (fn [[k m]]
-           (get m k (aid/casep k
-                      fs/fexists? (-> k
-                                      slurp
-                                      read-file)
-                      initial-file)))
-         (frp/snapshot current-file-path file)))
+(def sink-buffer
+  (->> buffer-entry
+       (m/<$> (partial apply hash-map))
+       core/merge
+       (frp/stepper {})
+       (frp/snapshot current-file-path)
+       (m/<$> (fn [[k m]]
+                (aid/casep k
+                  fs/fexists? (->> k
+                                   slurp
+                                   read-file
+                                   (move* :history :content get-history)
+                                   (get m k))
+                  initial-buffer)))))
 
 (def initial-scroll
   0)
 
-(def marker-size
-  8)
-
-(def font-size
-  (* 2 marker-size))
-
-(def cursor-size
-  (* font-size 3))
-
 (def initial-maximum
   0)
-
-(defn get-scroll
-  [client bound cursor]
-  (->> client
-       (frp/snapshot (m/<> bound cursor))
-       (core/reduce (fn [reduction [x view-size]]
-                      (-> reduction
-                          (max (-> x
-                                   inc
-                                   (* cursor-size)
-                                   (- view-size)))
-                          (min (* x cursor-size))))
-                    initial-scroll)
-       (frp/stepper initial-scroll)))
 
 (def maximum-pixel
   ;https://stackoverflow.com/a/16637689
@@ -625,11 +779,37 @@
 (def maximum-y-bound
   (get-maximum-bound :bottom))
 
+(def opening
+  (->> (aid/<$ true source-buffer)
+       (m/<> (aid/<$ false (m/<> action valid-expression)))
+       (frp/stepper true)))
+
+(defn get-scroll
+  [client bound offset cursor]
+  (->> client
+       (frp/snapshot (->> cursor
+                          (frp/stepper initial-cursor)
+                          (frp/snapshot bound opening)
+                          (m/<$> (fn [[bound* opening* cursor*]]
+                                   (if opening*
+                                     cursor*
+                                     (max bound* cursor*))))
+                          (m/<> cursor)))
+       (core/reduce (fn [reduction [x view-size]]
+                      (-> reduction
+                          (max (-> x
+                                   inc
+                                   (* cursor-size)
+                                   (- (- view-size offset))))
+                          (min (* x cursor-size))))
+                    initial-scroll)
+       (frp/stepper initial-scroll)))
+
 (def sink-scroll-x
-  (get-scroll client-width maximum-x-bound cursor-x-event))
+  (get-scroll client-width maximum-x-bound marker-size cursor-x-event))
 
 (def sink-scroll-y
-  (get-scroll client-height maximum-y-bound cursor-y-event))
+  (get-scroll client-height maximum-y-bound 0 cursor-y-event))
 
 (def get-pixel
   (partial m/<$> (comp (partial * cursor-size)
@@ -643,16 +823,10 @@
     (get-pixel cursor)))
 
 (def maximum-x
-  (get-maximum client-width
-               sink-scroll-x
-               maximum-x-bound
-               cursor-x-behavior))
+  (get-maximum client-width sink-scroll-x maximum-x-bound cursor-x-behavior))
 
 (def maximum-y
-  (get-maximum client-height
-               sink-scroll-y
-               maximum-y-bound
-               cursor-y-behavior))
+  (get-maximum client-height sink-scroll-y maximum-y-bound cursor-y-behavior))
 
 (aid/defcurried effect
   [f x]
@@ -742,9 +916,6 @@
     {:__html (js/katex.renderToString s
                                       #js {:displayMode true})}}])
 
-(def align
-  (partial (aid/flip str/join) ["\\begin{aligned}" "\\end{aligned}"]))
-
 (def background-color
   "black")
 
@@ -756,10 +927,6 @@
 
 (def outline-width
   1)
-
-(def get-cursor-pixel
-  (comp (partial + (/ marker-size 2))
-        (partial * cursor-size)))
 
 (defn get-node-color
   [mode* edge-node x-y]
@@ -773,29 +940,30 @@
   (let [state (r/atom {:height maximum-pixel})]
     (fn [mode* edge-node [[x y :as coll] s]]
       [:g
-       [:rect (merge (s/transform :height
-                                  (partial (aid/flip -) (* 2 font-size))
-                                  @state)
+       [:rect (merge (s/transform :height shrink @state)
                      {:fill  (get-node-color mode* edge-node coll)
                       :style {:outline-color (get-node-color mode*
                                                              edge-node
                                                              coll)
                               :outline-style "solid"
                               :outline-width outline-width}
-                      :x     (get-cursor-pixel x)
-                      :y     (get-cursor-pixel y)})]
+                      :x     (get-x-cursor-pixel x)
+                      :y     (* y cursor-size)})]
        [:> measure
         {:bounds    true
          :on-resize #(-> %
                          .-bounds
                          (js->clj :keywordize-keys true)
-                         ((juxt bounds
+                         ((juxt (comp bounds
+                                      (partial merge {:x x
+                                                      :y y}))
                                 (partial reset! state))))}
-        #(r/as-element [:foreignObject {:x (get-cursor-pixel x)
-                                        :y (get-cursor-pixel y)}
+        #(r/as-element [:foreignObject {:x (get-x-cursor-pixel x)
+                                        :y (* y cursor-size)}
                         [:div {:ref   (.-measureRef %)
-                               :style {:display    "inline-block"
-                                       :margin-top (- font-size)}}
+                               :style {:display       "inline-block"
+                                       :margin-bottom (- marker-size)
+                                       :margin-top    (- marker-size)}}
                          [math (align s)]]])]])))
 
 (def maximum-z-index
@@ -887,12 +1055,13 @@
 
 (def edge-component
   (comp (partial vector :line)
+        ;TODO add :on-click
         (partial s/setval* :style {:marker-end   "url(#arrow)"
                                    :stroke-width 1
                                    :stroke       color})
         (partial zipmap [:x1 :y1 :x2 :y2])
-        (partial map get-cursor-pixel)
-        flatten))
+        flatten
+        last))
 
 (defc edges-component
       [edges*]
@@ -919,9 +1088,12 @@
       [& _]
       (let [state (atom {})]
         (r/create-class
-          {:component-did-mount  dom*
-           :component-did-update (fn [this]
+          {:component-did-mount  (fn [this]
                                    (dom* this)
+                                   (js/window.addEventListener "resize"
+                                                               (fn [_]
+                                                                 (dom* this))))
+           :component-did-update (fn [this]
                                    (-> this
                                        r/dom-node
                                        (.scrollTo (:x @state)
@@ -964,9 +1136,8 @@
                                                  :outline-style  "solid"
                                                  :outline-width  outline-width}
                                        :width   cursor-size
-                                       :x       (get-cursor-pixel cursor-x)
-                                       :y       (get-cursor-pixel
-                                                  cursor-y)}]]])})))
+                                       :x       (get-x-cursor-pixel cursor-x)
+                                       :y       (* cursor-y cursor-size)}]]])})))
 
 (defc error-component
       [error* editor-command*]
@@ -1004,7 +1175,7 @@
     edge-mode
     edge-node-behavior
     x-y-behavior
-    edges
+    x-y-edge
     cursor-x-behavior
     cursor-y-behavior))
 
@@ -1030,8 +1201,9 @@
   (partial run! (partial apply frp/run)))
 
 (loop-event {source-directory             sink-directory
-             source-file                  sink-file
+             source-buffer                sink-buffer
              source-in                    sink-in
+             source-line-segment          sink-line-segment
              source-node-register         sink-node-register
              source-predecessors-register sink-predecessors-register
              source-scroll-x              sink-scroll-x
@@ -1078,6 +1250,7 @@
                                                     ["<Esc>"]
                                                     ["insert" "command"])))
 
+;TODO move this call down
 (frp/activate)
 
 (run! submission config-commands)

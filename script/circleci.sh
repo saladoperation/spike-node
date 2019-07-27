@@ -8,9 +8,9 @@ git clone -b develop https://github.com/schlepfilter/frp &&
 cd frp &&
 lein install &&
 cd .. &&
+yarn &&
+yarn webpack &&
 lein cljsbuild once builder &&
 lein cljsbuild once main-prod &&
-yarn install &&
-yarn webpack &&
 lein cljsbuild once renderer
 node target/main.js
