@@ -27,6 +27,7 @@
   (:require-macros [spike-node.core :refer [defc]]))
 
 (frp/defe source-buffer
+          source-content
           source-directory
           source-in
           source-line-segment
@@ -194,15 +195,23 @@
 (def get-cursor-behavior
   (partial frp/stepper initial-cursor))
 
+(def get-undo-redo-cursor
+  #(m/<$> last (frp/snapshot (m/<> undo redo)
+                             (->> source-content
+                                  (m/<$> %)
+                                  (frp/stepper initial-cursor)))))
+
 (def cursor-x-event
   (->> source-buffer
        (m/<$> :x)
-       (m/<> (aid/<$ initial-cursor carrot))
+       (m/<> (aid/<$ initial-cursor carrot)
+             (get-undo-redo-cursor :x))
        (get-cursor-event right left)))
 
 (def cursor-y-event
   (->> source-buffer
        (m/<$> :y)
+       (m/<> (get-undo-redo-cursor :y))
        (get-cursor-event down up)))
 
 (def cursor-x-behavior
@@ -425,11 +434,11 @@
              reset)
        (frp/accum initial-history)))
 
-(def content
+(def sink-content
   (m/<$> ffirst history))
 
 (def edge
-  (m/<$> :edge content))
+  (m/<$> :edge sink-content))
 
 (def initial-x-y
   {})
@@ -443,7 +452,7 @@
        (m/<> (m/<$> (comp constantly
                           :x-y
                           :node)
-                    content))
+                    sink-content))
        (frp/accum initial-x-y)))
 
 (def x-y-behavior
@@ -1231,6 +1240,7 @@
   (partial run! (partial apply frp/run)))
 
 (loop-event {source-directory             sink-directory
+             source-content               sink-content
              source-buffer                sink-buffer
              source-in                    sink-in
              source-line-segment          sink-line-segment
