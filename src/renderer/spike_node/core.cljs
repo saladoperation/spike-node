@@ -495,9 +495,7 @@
 (def node-snapshot
   (->> edge
        (frp/stepper initial-edge)
-       (frp/snapshot sink-node-register
-                     cursor-x-behavior
-                     cursor-y-behavior)))
+       (frp/snapshot sink-node-register cursor-x-behavior cursor-y-behavior)))
 
 (def get-edge-register
   #(m/<$> (fn [[_ x y edge*]]
