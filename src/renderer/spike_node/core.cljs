@@ -338,7 +338,7 @@
                                   val))
                     (map first))))))
 
-(def action
+(def graph-action
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
                                 (core/filter last)
                                 (m/<$> first))
@@ -363,18 +363,25 @@
                              cursor-x-behavior
                              cursor-y-behavior)))
        (m/<$> last)
-       (m/<> source-transform-edge)
-       (m/<$> #(aid/if-else (comp (aid/build =
-                                             %
-                                             identity)
-                                  ffirst)
-                            (comp (partial s/setval* s/LAST [])
-                                  (partial s/transform*
-                                           s/FIRST
-                                           (partial take undo-size))
-                                  (aid/transfer* [s/FIRST s/BEFORE-ELEM]
-                                                 (comp %
-                                                       ffirst)))))))
+       (m/<> source-transform-edge)))
+
+(def action
+  (m/<$> (comp #(aid/if-else (comp (aid/build =
+                                              %
+                                              identity)
+                                   ffirst)
+                             (comp (partial s/setval* s/LAST [])
+                                   (partial s/transform*
+                                            s/FIRST
+                                            (partial take undo-size))
+                                   (aid/transfer* [s/FIRST s/BEFORE-ELEM]
+                                                  (comp %
+                                                        ffirst))))
+               (fn [[f x y]]
+                 (comp (partial s/setval* :y y)
+                       (partial s/setval* :x x)
+                       f)))
+         (frp/snapshot graph-action cursor-x-behavior cursor-y-behavior)))
 
 (def multiton?
   (comp (partial < 1)
