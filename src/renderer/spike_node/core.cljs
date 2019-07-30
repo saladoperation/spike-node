@@ -509,7 +509,7 @@
 (def sink-successors-register
   (get-edge-register loom/successors))
 
-(def blockwise-visual
+(def blockwise-visual-mode
   (->> (m/<> (aid/<$ not blockwise-visual-toggle)
              (aid/<$ (constantly false) (m/<> delete escape undo)))
        (frp/accum false)
@@ -518,7 +518,7 @@
 (def node-placeholder
   [])
 
-(def blockwise-node
+(def blockwise-visual-node
   (->> (frp/snapshot blockwise-visual-toggle
                      cursor-x-behavior
                      cursor-y-behavior)
@@ -1152,10 +1152,12 @@
                                       scroll-y*
                                       maximum-x
                                       maximum-y
-                                      mode*
+                                      edge-mode*
                                       edge-node
                                       x-y*
                                       edges*
+                                      blockwise-visual-mode*
+                                      blockwise-visual-node*
                                       cursor-x
                                       cursor-y]
                                    (swap! state (partial (aid/flip merge)
@@ -1175,8 +1177,8 @@
                                                :view-box      view-box}
                                       [:path {:d    path-d
                                               :fill color}]]
+                                     [nodes edge-mode* edge-node x-y*]
                                      [edges-component edges*]
-                                     [nodes mode* edge-node x-y*]
                                      [:rect
                                       {:height  cursor-size
                                        :opacity 0
@@ -1226,6 +1228,8 @@
     edge-node-behavior
     x-y-behavior
     x-y-edge
+    blockwise-visual-mode
+    blockwise-visual-node
     cursor-x-behavior
     cursor-y-behavior))
 
