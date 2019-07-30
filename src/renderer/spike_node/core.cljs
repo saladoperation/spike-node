@@ -969,7 +969,7 @@
 (def background-color
   "black")
 
-(def out-color
+(def selection-color
   "grey")
 
 (def color
@@ -982,7 +982,7 @@
   [mode* edge-node x-y]
   (if (and mode*
            (= edge-node x-y))
-    out-color
+    selection-color
     background-color))
 
 (defn math-node
@@ -1119,6 +1119,22 @@
            (mapv edge-component)
            (s/setval s/BEFORE-ELEM :g)))
 
+(def get-size
+  (comp (partial * cursor-size)
+        inc
+        Math/abs
+        -))
+
+(defc blockwise-visual-component
+      [mode [x0 y0] x1 y1]
+      [:rect (if mode
+               {:fill   selection-color
+                :height (get-size y1 y0)
+                :width  (get-size x1 x0)
+                :x      (get-x-cursor-pixel (min x0 x1))
+                :y      (* (min y0 y1) cursor-size)}
+               {})])
+
 (def ref-x
   2)
 
@@ -1179,6 +1195,11 @@
                                               :fill color}]]
                                      [nodes edge-mode* edge-node x-y*]
                                      [edges-component edges*]
+                                     [blockwise-visual-component
+                                      blockwise-visual-mode*
+                                      blockwise-visual-node*
+                                      cursor-x
+                                      cursor-y]
                                      [:rect
                                       {:height  cursor-size
                                        :opacity 0
