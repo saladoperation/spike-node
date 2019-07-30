@@ -437,7 +437,7 @@
 
 (def blockwise-visual
   (->> (m/<> (aid/<$ not blockwise-visual-toggle)
-             (aid/<$ (constantly false) (m/<> delete undo)))
+             (aid/<$ (constantly false) (m/<> delete escape undo)))
        (frp/accum false)
        (frp/stepper false)))
 
