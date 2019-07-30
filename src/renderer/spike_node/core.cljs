@@ -933,8 +933,8 @@
                    :editor
                    .blur)))
            :reagent-render
-           (fn [mode* text*]
-             (swap! state (partial s/setval* :mode mode*))
+           (fn [mode text]
+             (swap! state (partial s/setval* :mode mode))
              [:> ace-editor
               {:commands         [{:name    "`"
                                    :bindKey "`"
@@ -944,7 +944,7 @@
                                                       (aid/casep @state
                                                         :backtick "\\lambda"
                                                         "l"))}]
-               :focus            (= :insert mode*)
+               :focus            (= :insert mode)
                :keyboard-handler "vim"
                :mode             "latex"
                :on-change        #(insert-typing %)
@@ -957,7 +957,7 @@
                                   :height    "100%"
                                   :width     "100%"}
                :theme            "terminal"
-               :value            text*}])})))
+               :value            text}])})))
 
 (defn math
   [s]
