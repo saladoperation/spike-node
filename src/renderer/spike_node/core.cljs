@@ -1193,13 +1193,13 @@
                                                :view-box      view-box}
                                       [:path {:d    path-d
                                               :fill color}]]
-                                     [nodes edge-mode* edge-node x-y*]
-                                     [edges-component edges*]
                                      [blockwise-visual-component
                                       blockwise-visual-mode*
                                       blockwise-visual-node*
                                       cursor-x
                                       cursor-y]
+                                     [edges-component edges*]
+                                     [nodes edge-mode* edge-node x-y*]
                                      [:rect
                                       {:height  cursor-size
                                        :opacity 0
