@@ -46,7 +46,7 @@
           delete
           paste
           dom
-          normal-escape
+          escape
           insert-normal
           insert-insert
           command
@@ -252,7 +252,7 @@
                                      ffirst)
                                (comp exit?
                                      llast)))
-       (m/<> command-exit normal-escape)))
+       (m/<> command-exit escape)))
 
 (def undo-size
   10)
@@ -1276,7 +1276,7 @@
    "\\"     implication
    "ctrl+r" redo
    "ctrl+v" blockwise-visual-toggle
-   "escape" normal-escape
+   "escape" escape
    "h"      left
    "i"      insert-insert
    "j"      down
