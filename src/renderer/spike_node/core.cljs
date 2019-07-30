@@ -372,7 +372,6 @@
                              (frp/stepper "" valid-expression)
                              cursor-x-behavior
                              cursor-y-behavior))
-             ;TODO delete node and edge at the same time
              (frp/snapshot delete
                            ((aid/lift-a get-delete-edge)
                              (frp/stepper {} source-line-segment)
