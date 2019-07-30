@@ -303,21 +303,6 @@
                    vector)
              (get-set-node "")))
 
-(def get-nodes
-  (comp vector
-        vector))
-
-(defn get-paste-action
-  [node-register predecessors successors x y]
-  (comp (partial s/transform*
-                 :edge
-                 (partial (aid/flip graph/add-edges*)
-                          (concat (combo/cartesian-product predecessors
-                                                           (get-nodes x y))
-                                  (combo/cartesian-product (get-nodes x y)
-                                                           successors))))
-        (get-set-node node-register x y)))
-
 (def marker-size
   8)
 
@@ -347,6 +332,37 @@
                                                       cursor-size))
                                   val))
                     (map first))))))
+
+(def blockwise-visual-mode
+  (->> (m/<> (aid/<$ not blockwise-visual-toggle)
+             (aid/<$ (constantly false) (m/<> delete escape undo)))
+       (frp/accum false)
+       (frp/stepper false)))
+
+(def node-placeholder
+  [])
+
+(def blockwise-visual-node
+  (->> (frp/snapshot blockwise-visual-toggle
+                     cursor-x-behavior
+                     cursor-y-behavior)
+       (m/<$> rest)
+       (frp/stepper node-placeholder)))
+
+(def get-nodes
+  (comp vector
+        vector))
+
+(defn get-paste-action
+  [node-register predecessors successors x y]
+  (comp (partial s/transform*
+                 :edge
+                 (partial (aid/flip graph/add-edges*)
+                          (concat (combo/cartesian-product predecessors
+                                                           (get-nodes x y))
+                                  (combo/cartesian-product (get-nodes x y)
+                                                           successors))))
+        (get-set-node node-register x y)))
 
 (def graph-action
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
@@ -509,22 +525,6 @@
 
 (def sink-successors-register
   (get-edge-register loom/successors))
-
-(def blockwise-visual-mode
-  (->> (m/<> (aid/<$ not blockwise-visual-toggle)
-             (aid/<$ (constantly false) (m/<> delete escape undo)))
-       (frp/accum false)
-       (frp/stepper false)))
-
-(def node-placeholder
-  [])
-
-(def blockwise-visual-node
-  (->> (frp/snapshot blockwise-visual-toggle
-                     cursor-x-behavior
-                     cursor-y-behavior)
-       (m/<$> rest)
-       (frp/stepper node-placeholder)))
 
 (def edge-node-event
   (->> (frp/snapshot implication
