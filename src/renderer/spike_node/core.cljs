@@ -37,6 +37,7 @@
           source-scroll-y
           source-successors-register
           source-transform-edge
+          blockwise-visual-toggle
           down
           up
           left
@@ -433,6 +434,12 @@
                      redo)
              reset)
        (frp/accum initial-history)))
+
+(def blockwise-visual
+  (->> (m/<> (aid/<$ not blockwise-visual-toggle)
+             (aid/<$ (constantly false) (m/<> delete undo)))
+       (frp/accum false)
+       (frp/stepper false)))
 
 (def sink-content
   (m/<$> ffirst history))
@@ -1268,6 +1275,7 @@
    "^"      carrot
    "\\"     implication
    "ctrl+r" redo
+   "ctrl+v" blockwise-visual-toggle
    "escape" normal-escape
    "h"      left
    "i"      insert-insert
