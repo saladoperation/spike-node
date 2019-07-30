@@ -515,6 +515,16 @@
        (frp/accum false)
        (frp/stepper false)))
 
+(def node-placeholder
+  [])
+
+(def blockwise-node
+  (->> (frp/snapshot blockwise-visual-toggle
+                     cursor-x-behavior
+                     cursor-y-behavior)
+       (m/<$> rest)
+       (frp/stepper node-placeholder)))
+
 (def edge-node-event
   (->> (frp/snapshot implication
                      insert-text
@@ -523,9 +533,6 @@
        (core/remove (comp empty?
                           second))
        (m/<$> (partial drop 2))))
-
-(def node-placeholder
-  [])
 
 (def edge-node-behavior
   (frp/stepper node-placeholder edge-node-event))
