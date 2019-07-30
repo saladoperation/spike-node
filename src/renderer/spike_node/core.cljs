@@ -595,8 +595,7 @@
                                     :width
                                     :height)
                           in)
-                        (line/line2 (f out)
-                                    (f in)))])
+                        (line/line2 (f out) (f in)))])
 
 (def get-left-top-line-segment
   (get-intersection-line-segment get-left-top))
