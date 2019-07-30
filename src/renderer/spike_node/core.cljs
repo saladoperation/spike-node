@@ -435,12 +435,6 @@
              reset)
        (frp/accum initial-history)))
 
-(def blockwise-visual
-  (->> (m/<> (aid/<$ not blockwise-visual-toggle)
-             (aid/<$ (constantly false) (m/<> delete escape undo)))
-       (frp/accum false)
-       (frp/stepper false)))
-
 (def sink-content
   (m/<$> ffirst history))
 
@@ -514,6 +508,12 @@
 
 (def sink-successors-register
   (get-edge-register loom/successors))
+
+(def blockwise-visual
+  (->> (m/<> (aid/<$ not blockwise-visual-toggle)
+             (aid/<$ (constantly false) (m/<> delete escape undo)))
+       (frp/accum false)
+       (frp/stepper false)))
 
 (def edge-node-event
   (->> (frp/snapshot implication
