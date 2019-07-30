@@ -281,7 +281,7 @@
        (m/<> (aid/<$ true valid-expression))
        (frp/stepper false)))
 
-(aid/defcurried get-transform-node
+(aid/defcurried get-set-node
   [s x y]
   (partial s/setval*
            [:node
@@ -301,7 +301,7 @@
                              :edge
                              (partial (aid/flip graph/remove-nodes) %))
                    vector)
-             (get-transform-node "")))
+             (get-set-node "")))
 
 (def get-nodes
   (comp vector
@@ -316,7 +316,7 @@
                                                            (get-nodes x y))
                                   (combo/cartesian-product (get-nodes x y)
                                                            successors))))
-        (get-transform-node node-register x y)))
+        (get-set-node node-register x y)))
 
 (def marker-size
   8)
@@ -352,7 +352,7 @@
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
                                 (core/filter last)
                                 (m/<$> first))
-                           ((aid/lift-a get-transform-node)
+                           ((aid/lift-a get-set-node)
                              (frp/stepper "" valid-expression)
                              cursor-x-behavior
                              cursor-y-behavior))
