@@ -27,6 +27,7 @@
   (:require-macros [spike-node.core :refer [defc]]))
 
 (frp/defe source-buffer
+          source-content
           source-directory
           source-in
           source-line-segment
@@ -194,15 +195,23 @@
 (def get-cursor-behavior
   (partial frp/stepper initial-cursor))
 
+(def get-undo-redo-cursor
+  #(m/<$> last (frp/snapshot (m/<> undo redo)
+                             (->> source-content
+                                  (m/<$> %)
+                                  (frp/stepper initial-cursor)))))
+
 (def cursor-x-event
   (->> source-buffer
        (m/<$> :x)
-       (m/<> (aid/<$ initial-cursor carrot))
+       (m/<> (aid/<$ initial-cursor carrot)
+             (get-undo-redo-cursor :x))
        (get-cursor-event right left)))
 
 (def cursor-y-event
   (->> source-buffer
        (m/<$> :y)
+       (m/<> (get-undo-redo-cursor :y))
        (get-cursor-event down up)))
 
 (def cursor-x-behavior
@@ -338,7 +347,7 @@
                                   val))
                     (map first))))))
 
-(def action
+(def graph-action
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
                                 (core/filter last)
                                 (m/<$> first))
@@ -363,18 +372,25 @@
                              cursor-x-behavior
                              cursor-y-behavior)))
        (m/<$> last)
-       (m/<> source-transform-edge)
-       (m/<$> #(aid/if-else (comp (aid/build =
-                                             %
-                                             identity)
-                                  ffirst)
-                            (comp (partial s/setval* s/LAST [])
-                                  (partial s/transform*
-                                           s/FIRST
-                                           (partial take undo-size))
-                                  (aid/transfer* [s/FIRST s/BEFORE-ELEM]
-                                                 (comp %
-                                                       ffirst)))))))
+       (m/<> source-transform-edge)))
+
+(def action
+  (m/<$> (comp #(aid/if-else (comp (aid/build =
+                                              %
+                                              identity)
+                                   ffirst)
+                             (comp (partial s/setval* s/LAST [])
+                                   (partial s/transform*
+                                            s/FIRST
+                                            (partial take undo-size))
+                                   (aid/transfer* [s/FIRST s/BEFORE-ELEM]
+                                                  (comp %
+                                                        ffirst))))
+               (fn [[f x y]]
+                 (comp (partial s/setval* :y y)
+                       (partial s/setval* :x x)
+                       f)))
+         (frp/snapshot graph-action cursor-x-behavior cursor-y-behavior)))
 
 (def multiton?
   (comp (partial < 1)
@@ -418,11 +434,11 @@
              reset)
        (frp/accum initial-history)))
 
-(def content
+(def sink-content
   (m/<$> ffirst history))
 
 (def edge
-  (m/<$> :edge content))
+  (m/<$> :edge sink-content))
 
 (def initial-x-y
   {})
@@ -436,7 +452,7 @@
        (m/<> (m/<$> (comp constantly
                           :x-y
                           :node)
-                    content))
+                    sink-content))
        (frp/accum initial-x-y)))
 
 (def x-y-behavior
@@ -479,9 +495,7 @@
 (def node-snapshot
   (->> edge
        (frp/stepper initial-edge)
-       (frp/snapshot sink-node-register
-                     cursor-x-behavior
-                     cursor-y-behavior)))
+       (frp/snapshot sink-node-register cursor-x-behavior cursor-y-behavior)))
 
 (def get-edge-register
   #(m/<$> (fn [[_ x y edge*]]
@@ -767,17 +781,40 @@
        (m/<$> :client-height)
        (frp/stepper maximum-pixel)))
 
-(def get-maximum-bound
+(def editing-bound
+  (->> (frp/snapshot valid-bounds
+                     cursor-x-behavior
+                     cursor-y-behavior)
+       (core/partition 2 1)
+       (core/filter (comp (partial apply =)
+                          (partial map rest)))
+       (m/<$> last)
+       (m/<> (m/<$> rest
+                    (frp/snapshot insert-insert
+                                  (frp/stepper [] valid-bounds)
+                                  cursor-x-behavior
+                                  cursor-y-behavior)))
+       (m/<$> (fn [[m x y]]
+                (->> m
+                     (filter (comp (partial = x)
+                                   :x))
+                     (filter (comp (partial = y)
+                                   :y))
+                     (aid/if-then-else empty?
+                                       (constantly {})
+                                       first))))))
+
+(def get-editing-bound
   #(m/<$> (comp (partial (aid/flip quot) cursor-size)
-                (partial apply max initial-maximum)
-                (partial map %))
-          valid-bounds))
+                (partial max initial-maximum)
+                %)
+          editing-bound))
 
-(def maximum-x-bound
-  (get-maximum-bound :right))
+(def editing-x-bound
+  (get-editing-bound :right))
 
-(def maximum-y-bound
-  (get-maximum-bound :bottom))
+(def editing-y-bound
+  (get-editing-bound :bottom))
 
 (def opening
   (->> (aid/<$ true source-buffer)
@@ -806,10 +843,10 @@
        (frp/stepper initial-scroll)))
 
 (def sink-scroll-x
-  (get-scroll client-width maximum-x-bound marker-size cursor-x-event))
+  (get-scroll client-width editing-x-bound marker-size cursor-x-event))
 
 (def sink-scroll-y
-  (get-scroll client-height maximum-y-bound 0 cursor-y-event))
+  (get-scroll client-height editing-y-bound 0 cursor-y-event))
 
 (def get-pixel
   (partial m/<$> (comp (partial * cursor-size)
@@ -823,10 +860,10 @@
     (get-pixel cursor)))
 
 (def maximum-x
-  (get-maximum client-width sink-scroll-x maximum-x-bound cursor-x-behavior))
+  (get-maximum client-width sink-scroll-x editing-x-bound cursor-x-behavior))
 
 (def maximum-y
-  (get-maximum client-height sink-scroll-y maximum-y-bound cursor-y-behavior))
+  (get-maximum client-height sink-scroll-y editing-y-bound cursor-y-behavior))
 
 (aid/defcurried effect
   [f x]
@@ -1201,6 +1238,7 @@
   (partial run! (partial apply frp/run)))
 
 (loop-event {source-directory             sink-directory
+             source-content               sink-content
              source-buffer                sink-buffer
              source-in                    sink-in
              source-line-segment          sink-line-segment
