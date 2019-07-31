@@ -1046,6 +1046,7 @@
                               :outline-width outline-width}
                       :x     (get-x-cursor-pixel x)
                       :y     (* y cursor-size)})]
+       ^{:key [x y]}
        [:> measure
         {:bounds    true
          :on-resize #(-> %
