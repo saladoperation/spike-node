@@ -36,7 +36,7 @@
           source-scroll-x
           source-scroll-y
           source-successors-register
-          source-transform-edge
+          source-transform-edge-action
           blockwise-visual-toggle
           down
           up
@@ -281,7 +281,7 @@
        (m/<> (aid/<$ true valid-expression))
        (frp/stepper false)))
 
-(aid/defcurried get-set-node
+(aid/defcurried get-set-node-action*
   [s x y]
   (partial s/setval*
            [:node
@@ -355,7 +355,7 @@
         Math/abs
         -))
 
-(defn get-delete-nodes
+(defn get-delete-nodes-action*
   [mode [x0 y0] x1 y1 line-segment]
   (aid/if-then-else
     (comp empty?
@@ -400,7 +400,7 @@
   (comp vector
         vector))
 
-(defn get-paste-action
+(defn get-paste-action*
   [node-register predecessors successors x y]
   (comp (partial s/transform*
                  :edge
@@ -409,32 +409,32 @@
                                                            (get-nodes x y))
                                   (combo/cartesian-product (get-nodes x y)
                                                            successors))))
-        (get-set-node node-register x y)))
+        (get-set-node-action* node-register x y)))
 
 (def graph-action
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
                                 (core/filter last)
                                 (m/<$> first))
-                           ((aid/lift-a get-set-node)
+                           ((aid/lift-a get-set-node-action*)
                              (frp/stepper "" valid-expression)
                              cursor-x-behavior
                              cursor-y-behavior))
              (frp/snapshot delete
-                           ((aid/lift-a get-delete-nodes)
+                           ((aid/lift-a get-delete-nodes-action*)
                              blockwise-visual-mode
                              blockwise-visual-node
                              cursor-x-behavior
                              cursor-y-behavior
                              (frp/stepper {} source-line-segment)))
              (frp/snapshot paste
-                           ((aid/lift-a get-paste-action)
+                           ((aid/lift-a get-paste-action*)
                              (frp/stepper "" source-node-register)
                              (frp/stepper #{} source-predecessors-register)
                              (frp/stepper #{} source-successors-register)
                              cursor-x-behavior
                              cursor-y-behavior)))
        (m/<$> last)
-       (m/<> source-transform-edge)))
+       (m/<> source-transform-edge-action)))
 
 (def action
   (m/<$> (comp #(aid/if-else (comp (aid/build =
@@ -1326,7 +1326,7 @@
              source-scroll-x              sink-scroll-x
              source-scroll-y              sink-scroll-y
              source-successors-register   sink-successors-register
-             source-transform-edge        sink-transform-edge})
+             source-transform-edge-action sink-transform-edge})
 
 (frp/run #(oset! js/document "title" %) current-file-path)
 
