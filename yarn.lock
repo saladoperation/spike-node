@@ -3384,10 +3384,10 @@ react-dom@16.7.0:
     prop-types "^15.6.2"
     scheduler "^0.12.0"
 
-react-measure@2.2.3:
-  version "2.2.3"
-  resolved "https://registry.yarnpkg.com/react-measure/-/react-measure-2.2.3.tgz#9ddd4c6f9ab8af2bf8f4b9f79434b64385dc40f3"
-  integrity sha512-T2pNykdWhJRjbVbfX0A3GoELA6Q1U6GNZ3vzLqjbRHe1hwOA6QpqhAltrJDIbY9XYf++Gf1K1o3hEMe9xl2BHA==
+react-measure@2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/react-measure/-/react-measure-2.3.0.tgz#75835d39abec9ae13517f35a819c160997a7a44e"
+  integrity sha512-dwAvmiOeblj5Dvpnk8Jm7Q8B4THF/f1l1HtKVi0XDecsG6LXwGvzV5R1H32kq3TW6RW64OAf5aoQxpIgLa4z8A==
   dependencies:
     "@babel/runtime" "^7.2.0"
     get-node-dimensions "^1.2.1"

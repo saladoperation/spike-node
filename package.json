@@ -21,6 +21,6 @@
     "react": "16.7.0",
     "react-ace": "6.3.2",
     "react-dom": "16.7.0",
-    "react-measure": "2.2.3"
+    "react-measure": "2.3.0"
   }
 }
