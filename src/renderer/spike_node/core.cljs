@@ -295,14 +295,6 @@
              empty? s/NONE
              s)))
 
-(def get-delete-node
-  (aid/build comp
-             (comp #(partial s/transform*
-                             :edge
-                             (partial (aid/flip graph/remove-nodes) %))
-                   vector)
-             (get-set-node "")))
-
 (def marker-size
   8)
 
@@ -315,23 +307,6 @@
 (def get-x-cursor-pixel
   (comp (partial + (/ marker-size 2))
         (partial * cursor-size)))
-
-(defn get-delete-edge
-  [m x y]
-  (aid/if-else
-    (partial s/select-one* [:node :x-y (s/keypath [x y])])
-    (partial
-      s/transform*
-      :edge
-      (partial (aid/flip graph/remove-edges*)
-               (->> m
-                    (filter (comp (partial geom/intersect-line
-                                           (rect/rect (get-x-cursor-pixel x)
-                                                      (* y cursor-size)
-                                                      cursor-size
-                                                      cursor-size))
-                                  val))
-                    (map first))))))
 
 (def blockwise-visual-mode
   (->> (m/<> (aid/<$ not blockwise-visual-toggle)
@@ -348,6 +323,78 @@
                      cursor-y-behavior)
        (m/<$> rest)
        (frp/stepper node-placeholder)))
+
+(aid/defcurried between?
+  [x y z]
+  (<= (min x y) z (max x y)))
+
+(def flast
+  (comp last
+        first))
+
+(defn get-pred
+  [f mode a0 a1]
+  (s/pred (comp (between? (if mode
+                            a0
+                            a1)
+                          a1)
+                f)))
+
+(aid/defcurried get-node-path
+  [k mode a0 a1 b0 b1]
+  [k s/ALL (get-pred ffirst mode a0 a1) (get-pred flast mode b0 b1)])
+
+(def get-select-x-y
+  (comp (aid/curry 2 s/select*)
+        (partial vector :node)
+        (get-node-path :x-y)))
+
+(def get-size
+  (comp (partial * cursor-size)
+        inc
+        Math/abs
+        -))
+
+(defn get-delete-nodes
+  [mode [x0 y0] x1 y1 line-segment]
+  (aid/if-then-else
+    (comp empty?
+          (get-select-x-y mode x0 x1 y0 y1))
+    (partial
+      s/transform*
+      :edge
+      (partial
+        (aid/flip graph/remove-edges*)
+        (->> line-segment
+             (filter (comp (partial geom/intersect-line
+                                    (rect/rect (get-x-cursor-pixel (min x0
+                                                                        x1))
+                                               (* (min y0
+                                                       y1)
+                                                  cursor-size)
+                                               (get-size x0 x1)
+                                               (get-size y0 y1)))
+                           val))
+             (map first))))
+    (comp (partial s/transform*
+                   [:node
+                    (s/multi-path (get-node-path :x-y
+                                                 mode
+                                                 x0
+                                                 x1
+                                                 y0
+                                                 y1)
+                                  (get-node-path :y-x
+                                                 mode
+                                                 y0
+                                                 y1
+                                                 x0
+                                                 x1))]
+                   s/NONE)
+          (aid/transfer* :edge
+                         (aid/build graph/remove-nodes
+                                    :edge
+                                    (get-select-x-y mode x0 x1 y0 y1))))))
 
 (def get-nodes
   (comp vector
@@ -373,14 +420,12 @@
                              cursor-x-behavior
                              cursor-y-behavior))
              (frp/snapshot delete
-                           ((aid/lift-a get-delete-edge)
-                             (frp/stepper {} source-line-segment)
+                           ((aid/lift-a get-delete-nodes)
+                             blockwise-visual-mode
+                             blockwise-visual-node
                              cursor-x-behavior
-                             cursor-y-behavior))
-             (frp/snapshot delete
-                           ((aid/lift-a get-delete-node)
-                             cursor-x-behavior
-                             cursor-y-behavior))
+                             cursor-y-behavior
+                             (frp/stepper {} source-line-segment)))
              (frp/snapshot paste
                            ((aid/lift-a get-paste-action)
                              (frp/stepper "" source-node-register)
@@ -1118,12 +1163,6 @@
       (->> edges*
            (mapv edge-component)
            (s/setval s/BEFORE-ELEM :g)))
-
-(def get-size
-  (comp (partial * cursor-size)
-        inc
-        Math/abs
-        -))
 
 (defc blockwise-visual-component
       [mode [x0 y0] x1 y1]
