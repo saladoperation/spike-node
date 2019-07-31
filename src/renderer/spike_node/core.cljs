@@ -376,7 +376,7 @@
                                                (get-size y0 y1)))
                            val))
              (map first))))
-    (comp (partial s/transform*
+    (comp (partial s/setval*
                    [:node
                     (s/multi-path (get-node-path :x-y
                                                  mode
