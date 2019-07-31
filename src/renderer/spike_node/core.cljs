@@ -603,7 +603,9 @@
                           keys)
                     x-y-event))
        (frp/accum {})
-       (m/<$> vals)))
+       (m/<$> (aid/if-then-else empty?
+                                (constantly [])
+                                vals))))
 
 (def make-directional
   #(comp (partial apply =)
