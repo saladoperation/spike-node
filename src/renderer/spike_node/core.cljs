@@ -1201,11 +1201,10 @@
                                    (js/window.addEventListener "resize"
                                                                (fn [_]
                                                                  (dom* this))))
-           :component-did-update (fn [this]
-                                   (-> this
-                                       r/dom-node
-                                       (.scrollTo (:x @state)
-                                                  (:y @state))))
+           :component-did-update #(-> %
+                                      r/dom-node
+                                      (.scrollTo (:x @state)
+                                                 (:y @state)))
            :reagent-render       (fn [scroll-x*
                                       scroll-y*
                                       maximum-x
