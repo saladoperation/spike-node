@@ -984,7 +984,9 @@
                  (.addEventListener
                    "keyup"
                    (fn [event*]
-                     (editor-keyup (get-status-text @state))
+                     (-> @state
+                         get-status-text
+                         editor-keyup)
                      (swap! state
                             (partial s/setval*
                                      :backtick
