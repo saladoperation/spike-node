@@ -961,6 +961,9 @@
              (effect #(reset! state {:arguments more
                                      :return    %})))))))
 
+(def get-status-text
+  #(.keyBinding.getStatusText (:editor %) (:editor %)))
+
 (defc editor
       [& _]
       (let [state (atom {})]
@@ -973,8 +976,7 @@
                .textInput.getElement
                (.addEventListener
                  "keydown"
-                 #(editor-keydown [(.keyBinding.getStatusText (:editor @state)
-                                                              (:editor @state))
+                 #(editor-keydown [(get-status-text @state)
                                    (.-key %)])))
              (-> @state
                  :editor
@@ -982,8 +984,7 @@
                  (.addEventListener
                    "keyup"
                    (fn [event*]
-                     (editor-keyup (.keyBinding.getStatusText (:editor @state)
-                                                              (:editor @state)))
+                     (editor-keyup (get-status-text @state))
                      (swap! state
                             (partial s/setval*
                                      :backtick
