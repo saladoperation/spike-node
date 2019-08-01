@@ -376,9 +376,7 @@
              (filter (comp (partial geom/intersect-line
                                     (rect/rect (get-x-cursor-pixel (min x0
                                                                         x1))
-                                               (* (min y0
-                                                       y1)
-                                                  cursor-size)
+                                               (* (min y0 y1) cursor-size)
                                                (get-size x0 x1)
                                                (get-size y0 y1)))
                            val))
