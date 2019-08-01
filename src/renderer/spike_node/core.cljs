@@ -505,15 +505,16 @@
 
 (def node-register
   (m/<$> (fn [[_ m mode [x0 y0] x1 y1]]
-           (->> m
-                :node
-                :x-y
-                (s/setval [s/ALL
-                           (get-pred not ffirst mode x0 x1)
-                           (get-pred not flast mode y0 y1)]
-                          s/NONE)))
+           (s/setval [s/ALL
+                      (get-pred not ffirst mode x0 x1)
+                      (get-pred not flast mode y0 y1)]
+                     s/NONE
+                     m))
          (frp/snapshot delete
-                       (frp/stepper {:node {:x-y {}}} sink-content)
+                       (->> sink-content
+                            (m/<$> (comp :x-y
+                                         :node))
+                            (frp/stepper {}))
                        blockwise-visual-mode
                        blockwise-visual-node
                        cursor-x-behavior
