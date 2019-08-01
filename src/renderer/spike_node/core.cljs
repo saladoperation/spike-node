@@ -333,16 +333,20 @@
         first))
 
 (defn get-pred
-  [f mode a0 a1]
-  (s/pred (comp (between? (if mode
+  [f g mode a0 a1]
+  (s/pred (comp f
+                (between? (if mode
                             a0
                             a1)
                           a1)
-                f)))
+                g)))
 
 (aid/defcurried get-node-path
   [k mode a0 a1 b0 b1]
-  [k s/ALL (get-pred ffirst mode a0 a1) (get-pred flast mode b0 b1)])
+  [k
+   s/ALL
+   (get-pred identity ffirst mode a0 a1)
+   (get-pred identity flast mode b0 b1)])
 
 (def get-select-x-y
   (comp (aid/curry 2 s/select*)
@@ -498,6 +502,22 @@
 
 (def sink-content
   (m/<$> ffirst history))
+
+(def node-register
+  (m/<$> (fn [[_ m mode [x0 y0] x1 y1]]
+           (->> m
+                :node
+                :x-y
+                (s/setval [s/ALL
+                           (get-pred not ffirst mode x0 x1)
+                           (get-pred not flast mode y0 y1)]
+                          s/NONE)))
+         (frp/snapshot delete
+                       (frp/stepper {:node {:x-y {}}} sink-content)
+                       blockwise-visual-mode
+                       blockwise-visual-node
+                       cursor-x-behavior
+                       cursor-y-behavior)))
 
 (def edge
   (m/<$> :edge sink-content))
