@@ -503,23 +503,6 @@
 (def sink-content
   (m/<$> ffirst history))
 
-(def node-register
-  (m/<$> (fn [[_ m mode [x0 y0] x1 y1]]
-           (s/setval [s/ALL
-                      (get-pred not ffirst mode x0 x1)
-                      (get-pred not flast mode y0 y1)]
-                     s/NONE
-                     m))
-         (frp/snapshot delete
-                       (->> sink-content
-                            (m/<$> (comp :x-y
-                                         :node))
-                            (frp/stepper {}))
-                       blockwise-visual-mode
-                       blockwise-visual-node
-                       cursor-x-behavior
-                       cursor-y-behavior)))
-
 (def edge
   (m/<$> :edge sink-content))
 
@@ -540,6 +523,20 @@
 
 (def x-y-behavior
   (frp/stepper initial-x-y x-y-event))
+
+(def node-register
+  (m/<$> (fn [[_ m mode [x0 y0] x1 y1]]
+           (s/setval [s/ALL
+                      (get-pred not ffirst mode x0 x1)
+                      (get-pred not flast mode y0 y1)]
+                     s/NONE
+                     m))
+         (frp/snapshot delete
+                       x-y-behavior
+                       blockwise-visual-mode
+                       blockwise-visual-node
+                       cursor-x-behavior
+                       cursor-y-behavior)))
 
 (aid/defcurried extract-insert
   [n coll]
