@@ -347,14 +347,13 @@
              (comp (make-between?* mode b0 b1)
                    flast)))
 
-(aid/defcurried get-node-path
+(defn get-node-path
   [k mode a0 a1 b0 b1]
   [k s/ALL (s/pred (make-in? mode a0 a1 b0 b1))])
 
-(def get-select-x-y
-  (comp (aid/curry 2 s/select*)
-        (partial vector :node)
-        (get-node-path :x-y)))
+(defn make-select-x-y
+  [& more]
+  (partial s/select* [:node (apply get-node-path :x-y more) s/FIRST]))
 
 (def get-size
   (comp (partial * cursor-size)
@@ -366,7 +365,7 @@
   [mode [x0 y0] x1 y1 line-segment]
   (aid/if-then-else
     (comp empty?
-          (get-select-x-y mode x0 x1 y0 y1))
+          (make-select-x-y mode x0 x1 y0 y1))
     (partial
       s/transform*
       :edge
@@ -397,9 +396,9 @@
                                                  x1))]
                    s/NONE)
           (aid/transfer* :edge
-                         (aid/build graph/remove-nodes
+                         (aid/build (partial apply graph/remove-nodes)
                                     :edge
-                                    (get-select-x-y mode x0 x1 y0 y1))))))
+                                    (make-select-x-y mode x1 x1 y0 y1))))))
 
 (def get-nodes
   (comp vector
