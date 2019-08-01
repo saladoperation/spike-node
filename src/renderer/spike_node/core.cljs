@@ -332,21 +332,24 @@
   (comp last
         first))
 
-(defn get-pred
-  [f g mode a0 a1]
-  (s/pred (comp f
-                (between? (if mode
-                            a0
-                            a1)
-                          a1)
-                g)))
+(defn make-between?*
+  [mode a0 a1]
+  (between? (if mode
+              a0
+              a1)
+            a1))
+
+(defn make-in?
+  [mode a0 a1 b0 b1]
+  (aid/build and
+             (comp (make-between?* mode a0 a1)
+                   ffirst)
+             (comp (make-between?* mode b0 b1)
+                   flast)))
 
 (aid/defcurried get-node-path
   [k mode a0 a1 b0 b1]
-  [k
-   s/ALL
-   (get-pred identity ffirst mode a0 a1)
-   (get-pred identity flast mode b0 b1)])
+  [k s/ALL (s/pred (make-in? mode a0 a1 b0 b1))])
 
 (def get-select-x-y
   (comp (aid/curry 2 s/select*)
@@ -527,8 +530,9 @@
 (def node-register
   (m/<$> (fn [[_ m mode [x0 y0] x1 y1]]
            (s/setval [s/ALL
-                      (get-pred not ffirst mode x0 x1)
-                      (get-pred not flast mode y0 y1)]
+                      (-> (make-in? mode x0 x1 y0 y1)
+                          complement
+                          s/pred)]
                      s/NONE
                      m))
          (frp/snapshot delete
