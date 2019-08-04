@@ -511,6 +511,9 @@
 (def canonical
   (m/<$> :canonical node-behavior))
 
+(def id
+  (m/<$> :id node-behavior))
+
 (aid/defcurried extract-insert
   [n coll]
   (->> coll
@@ -531,10 +534,10 @@
 (def insert-text
   (->> insert-typing
        (m/<> (zip-entities (fn [[x y m]]
-                             (if-let [id ((:id m) [x y])]
+                             (if-let [id* ((:id m) [x y])]
                                (-> m
                                    :canonical
-                                   id
+                                   id*
                                    :value)
                                ""))
                            [cursor-x-event cursor-y-event node-event]
@@ -547,10 +550,14 @@
   (->> (frp/snapshot implication
                      insert-text
                      cursor-x-behavior
-                     cursor-y-behavior)
+                     cursor-y-behavior
+                     id)
        (core/remove (comp empty?
                           second))
-       (m/<$> (partial drop 2))))
+       (m/<$> (comp (aid/build aid/funcall
+                               last
+                               (partial take 2))
+                    (partial drop 2)))))
 
 (def edge-node-behavior
   (frp/stepper node-placeholder edge-node-event))
@@ -565,7 +572,7 @@
                      (frp/stepper 0 source-scroll-y))
        (m/<$> (comp (aid/flip (aid/curry 2 merge))
                     (aid/build hash-map
-                               (juxt :x :y)
+                               :id
                                identity)
                     (fn [[bound scroll-x scroll-y]]
                       (->> bound
@@ -574,7 +581,7 @@
        (m/<> (m/<$> (comp (aid/curry 2 s/select-one*)
                           s/submap
                           keys
-                          :id)
+                          :canonical)
                     node-event))
        (frp/accum {})
        (m/<$> (aid/if-then-else empty?
@@ -586,10 +593,10 @@
          (partial map %)))
 
 (def horizontal?
-  (make-directional :y))
+  (make-directional :top))
 
 (def vertical?
-  (make-directional :x))
+  (make-directional :left))
 
 (def oblique?
   (complement (aid/build or
@@ -659,14 +666,14 @@
     (aid/if-then-else corners?
                       get-corner-line-segment
                       (get-intersection-line-segment get-center))
-    (aid/if-then-else horizontal?
+    (aid/if-then-else (comp horizontal?)
                       (comp (partial s/transform*
                                      [s/ALL s/LAST]
                                      (partial + font-size))
                             get-left-top-line-segment)
                       get-left-top-line-segment)))
 
-(def x-y-edge
+(def correspondence
   ((aid/lift-a (fn [m coll]
                  (->> coll
                       (map (aid/if-then-else (partial every? m)
@@ -678,7 +685,7 @@
                       (apply merge {}))))
     (->> valid-bounds
          (m/<$> (aid/build zipmap
-                           (partial map (juxt :x :y))
+                           (partial map :id)
                            (partial map
                                     (comp (partial s/transform*
                                                    (s/multi-path :top
@@ -694,7 +701,7 @@
          (frp/stepper []))))
 
 (def sink-line-segment
-  (m/<$> (partial s/transform* s/MAP-VALS line/line2) x-y-edge))
+  (m/<$> (partial s/transform* s/MAP-VALS line/line2) correspondence))
 
 (def error
   (m/<$> get-error insert-text))
@@ -1026,36 +1033,34 @@
   1)
 
 (defn get-node-color
-  [mode edge-node x y]
+  [mode edge-node id*]
   (if (and mode
-           (= edge-node [x y]))
+           (= edge-node id*))
     selection-color
     background-color))
 
 (defn math-node
   [& _]
   (let [state (r/atom {:height maximum-pixel})]
-    (fn [mode edge-node {:keys [value x y]}]
+    (fn [mode edge-node [id* {:keys [value x y]}]]
       [:g
        [:rect (merge (s/transform :height shrink @state)
-                     {:fill  (get-node-color mode edge-node x y)
+                     {:fill  (get-node-color mode edge-node id*)
                       :style {:outline-color (get-node-color mode
                                                              edge-node
-                                                             x
-                                                             y)
+                                                             id*)
                               :outline-style "solid"
                               :outline-width outline-width}
                       :x     (get-x-cursor-pixel x)
                       :y     (* y cursor-size)})]
-       ^{:key [x y]}
+       ^{:key id*}
        [:> measure
         {:bounds    true
          :on-resize #(-> %
                          .-bounds
                          (js->clj :keywordize-keys true)
                          ((juxt (comp bounds
-                                      (partial merge {:x x
-                                                      :y y}))
+                                      (partial s/setval* :id id*))
                                 (partial reset! state))))}
         #(r/as-element [:foreignObject {:x (get-x-cursor-pixel x)
                                         :y (* y cursor-size)}
@@ -1149,7 +1154,6 @@
 (defc nodes
       [mode edge-node canonical*]
       (->> canonical*
-           vals
            (mapv (partial vector math-node mode edge-node))
            (s/setval s/BEFORE-ELEM :g)))
 
@@ -1164,8 +1168,8 @@
         last))
 
 (defc edges-component
-      [edges*]
-      (->> edges*
+      [correspondence*]
+      (->> correspondence*
            (mapv edge-component)
            (s/setval s/BEFORE-ELEM :g)))
 
@@ -1214,7 +1218,7 @@
                                       edge-mode*
                                       edge-node
                                       canonical*
-                                      edges*
+                                      correspondence*
                                       blockwise-visual-mode*
                                       blockwise-visual-node*
                                       cursor-x
@@ -1241,7 +1245,7 @@
                                       blockwise-visual-node*
                                       cursor-x
                                       cursor-y]
-                                     [edges-component edges*]
+                                     [edges-component correspondence*]
                                      [nodes edge-mode* edge-node canonical*]
                                      [:rect
                                       {:height  cursor-size
@@ -1291,7 +1295,7 @@
     edge-mode
     edge-node-behavior
     canonical
-    x-y-edge
+    correspondence
     blockwise-visual-mode
     blockwise-visual-node
     cursor-x-behavior
