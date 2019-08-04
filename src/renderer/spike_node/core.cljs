@@ -283,7 +283,7 @@
     empty? s/NONE
     x))
 
-(aid/defcurried get-set-node-action*
+(defn get-set-node-action*
   [s x y]
   (partial s/transform*
            :node
