@@ -800,11 +800,12 @@
                               (comp (partial s/transform* :node :canonical)
                                     ffirst))))
        (core/remove (fn [[path* m]]
-                      (and (fs/fexists? path*)
-                           (-> path*
-                               slurp
-                               read-file
-                               (= m)))))))
+                      (or (empty? path*)
+                          (and (fs/fexists? path*)
+                               (-> path*
+                                   slurp
+                                   read-file
+                                   (= m))))))))
 
 (def initial-buffer
   {:history initial-history
@@ -1390,13 +1391,11 @@
                                                     ["<Esc>"]
                                                     ["insert" "command"])))
 
-;TODO move this call down
-(frp/activate)
-
-(run! submission config-commands)
-
-(frp/run (partial apply spit) modification)
-
 (.ipcRenderer.on helpers/electron helpers/channel (comp potential-file-path
                                                         last
                                                         vector))
+(frp/run (partial apply spit) modification)
+
+(frp/activate)
+
+(run! submission config-commands)
