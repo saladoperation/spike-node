@@ -283,26 +283,28 @@
     empty? s/NONE
     x))
 
-(defn get-set-node-action*
+(defn get-set-node-action**
   [s x y]
-  (partial s/transform*
-           :node
-           #(let [id (get (:id %)
-                          [x
-                           y]
-                          (-> (random-uuid)
-                              str
-                              keyword))]
-              (->> %
-                   (s/setval [:canonical
-                              id]
-                             (get-none-value s {:value s
-                                                :x     x
-                                                :y     y}))
-                   (s/setval [:id
-                              (s/keypath [x
-                                          y])]
-                             (get-none-value s id))))))
+  #(let [id (get (:id %)
+                 [x
+                  y]
+                 (-> (random-uuid)
+                     str
+                     keyword))]
+     (->> %
+          (s/setval [:canonical
+                     id]
+                    (get-none-value s {:value s
+                                       :x     x
+                                       :y     y}))
+          (s/setval [:id
+                     (s/keypath [x
+                                 y])]
+                    (get-none-value s id)))))
+
+(def get-set-node-action*
+  (comp ((aid/curry 3 s/transform*) :node)
+        get-set-node-action**))
 
 (def marker-size
   8)
@@ -497,7 +499,7 @@
   (->> (frp/snapshot valid-expression
                      cursor-x-behavior
                      cursor-y-behavior)
-       (m/<$> (partial apply get-set-node-action*))
+       (m/<$> (partial apply get-set-node-action**))
        (m/<> (m/<$> (comp constantly
                           :node)
                     sink-content))
