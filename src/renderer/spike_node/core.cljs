@@ -496,9 +496,7 @@
   (m/<$> :edge sink-content))
 
 (def node-event
-  (->> (frp/snapshot valid-expression
-                     cursor-x-behavior
-                     cursor-y-behavior)
+  (->> (frp/snapshot valid-expression cursor-x-behavior cursor-y-behavior)
        (m/<$> (partial apply get-set-node-action**))
        (m/<> (m/<$> (comp constantly
                           :node)
