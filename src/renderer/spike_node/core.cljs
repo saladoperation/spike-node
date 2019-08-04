@@ -514,6 +514,27 @@
 (def id
   (m/<$> :id node-behavior))
 
+(def node-register
+  (m/<$> (fn [[_ m mode [x0 y0] x1 y1]]
+           (s/setval [s/ALL
+                      (-> (aid/build and
+                                     (comp (make-between?* mode x0 x1)
+                                           :x
+                                           last)
+                                     (comp (make-between?* mode y0 y1)
+                                           :y
+                                           last))
+                          complement
+                          s/pred)]
+                     s/NONE
+                     m))
+         (frp/snapshot delete
+                       canonical
+                       blockwise-visual-mode
+                       blockwise-visual-node
+                       cursor-x-behavior
+                       cursor-y-behavior)))
+
 (aid/defcurried extract-insert
   [n coll]
   (->> coll
