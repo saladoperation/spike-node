@@ -1409,6 +1409,7 @@
 (.ipcRenderer.on helpers/electron helpers/channel (comp potential-file-path
                                                         last
                                                         vector))
+
 (frp/run (partial apply spit) modification)
 
 (frp/activate)
