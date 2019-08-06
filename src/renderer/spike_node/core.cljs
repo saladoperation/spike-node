@@ -512,19 +512,14 @@
 (def id
   (m/<$> :id node-behavior))
 
-(defn make-offset*
-  [k]
+(defn make-offset
+  [k a0 a1]
   (aid/build (partial s/transform* [s/MAP-VALS k])
              (comp (aid/flip (aid/curry 2 -))
-                   (partial apply min)
+                   (partial apply min a0 a1)
                    (partial map k)
                    vals)
              identity))
-
-(def offset
-  (->> [:x :y]
-       (map make-offset*)
-       (apply comp)))
 
 (def node-register
   (m/<$> (fn [[_ m mode [x0 y0] x1 y1]]
@@ -540,7 +535,8 @@
                                complement
                                s/pred)]
                           s/NONE)
-                offset))
+                ((make-offset :x x0 x1))
+                ((make-offset :y y0 y1))))
          (frp/snapshot delete
                        canonical
                        blockwise-visual-mode
