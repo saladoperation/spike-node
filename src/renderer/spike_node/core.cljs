@@ -512,20 +512,35 @@
 (def id
   (m/<$> :id node-behavior))
 
+(defn make-offset*
+  [k]
+  (aid/build (partial s/transform* [s/MAP-VALS k])
+             (comp (aid/flip (aid/curry 2 -))
+                   (partial apply min)
+                   (partial map k)
+                   vals)
+             identity))
+
+(def offset
+  (->> [:x :y]
+       (map make-offset*)
+       (apply comp)))
+
 (def node-register
   (m/<$> (fn [[_ m mode [x0 y0] x1 y1]]
-           (s/setval [s/ALL
-                      (-> (aid/build and
-                                     (comp (make-between?* mode x0 x1)
-                                           :x
-                                           last)
-                                     (comp (make-between?* mode y0 y1)
-                                           :y
-                                           last))
-                          complement
-                          s/pred)]
-                     s/NONE
-                     m))
+           (->> m
+                (s/setval [s/ALL
+                           (-> (aid/build and
+                                          (comp (make-between?* mode x0 x1)
+                                                :x
+                                                last)
+                                          (comp (make-between?* mode y0 y1)
+                                                :y
+                                                last))
+                               complement
+                               s/pred)]
+                          s/NONE)
+                offset))
          (frp/snapshot delete
                        canonical
                        blockwise-visual-mode
@@ -906,7 +921,7 @@
        (frp/stepper true)))
 
 (defn get-scroll
-  [client bound offset cursor]
+  [client bound offset* cursor]
   (->> client
        (frp/snapshot (->> cursor
                           (frp/stepper initial-cursor)
@@ -921,7 +936,7 @@
                           (max (-> x
                                    inc
                                    (* cursor-size)
-                                   (- (- view-size offset))))
+                                   (- (- view-size offset*))))
                           (min (* x cursor-size))))
                     initial-scroll)
        (frp/stepper initial-scroll)))
