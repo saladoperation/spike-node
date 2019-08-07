@@ -1322,9 +1322,10 @@
                                       blockwise-visual-node*
                                       cursor-x
                                       cursor-y]
-                                   (swap! state (partial (aid/flip merge)
-                                                         {:x scroll-x*
-                                                          :y scroll-y*}))
+                                   (swap! state
+                                          (partial (aid/flip merge)
+                                                   {:x scroll-x*
+                                                    :y scroll-y*}))
                                    [:div {:style {:height   "100%"
                                                   :overflow "scroll"
                                                   :width    "100%"}}
@@ -1356,7 +1357,8 @@
                                                  :outline-width  outline-width}
                                        :width   cursor-size
                                        :x       (get-x-cursor-pixel cursor-x)
-                                       :y       (* cursor-y cursor-size)}]]])})))
+                                       :y       (* cursor-y
+                                                   cursor-size)}]]])})))
 
 (defc error-component
       [error* editor-command*]
