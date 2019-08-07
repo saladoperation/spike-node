@@ -23,20 +23,21 @@
             [thi.ng.geom.core :as geom]
             [spike-node.helpers :as helpers]
             [spike-node.loom :as loom]
-            [spike-node.parse.core :as parse])
+            [spike-node.parse.core :as parse]
+            [clojure.set :as set])
   (:require-macros [spike-node.core :refer [defc]]))
 
 (frp/defe source-buffer
           source-content
           source-directory
+          source-edge-register
           source-in
           source-line-segment
           source-node-register
-          source-predecessors-register
           source-scroll-x
           source-scroll-y
-          source-successors-register
-          source-transform-edge
+          source-transform-edge-action
+          blockwise-visual-toggle
           down
           up
           left
@@ -45,7 +46,7 @@
           delete
           paste
           dom
-          normal-escape
+          escape
           insert-normal
           insert-insert
           command
@@ -140,10 +141,7 @@
   (partial
     edn/read-string
     {:readers
-     {'spike-node.core.Table           (partial s/transform*
-                                                s/MAP-VALS
-                                                (partial into (sorted-map)))
-      'loom.graph.BasicEditableDigraph (comp loom/digraph
+     {'loom.graph.BasicEditableDigraph (comp loom/digraph
                                              :adj)}}))
 
 (def edn?
@@ -220,11 +218,13 @@
 (def cursor-y-behavior
   (get-cursor-behavior cursor-y-event))
 
-(defrecord Table
-  [x-y y-x])
+(def initial-canonical
+  {})
 
-(def initial-table
-  (->Table (sorted-map) (sorted-map)))
+(def initial-node
+  ;TODO add :horizontal
+  {:canonical initial-canonical
+   :id        {}})
 
 (def initial-edge
   (graph/digraph))
@@ -251,7 +251,7 @@
                                      ffirst)
                                (comp exit?
                                      llast)))
-       (m/<> command-exit normal-escape)))
+       (m/<> command-exit escape)))
 
 (def undo-size
   10)
@@ -280,42 +280,34 @@
        (m/<> (aid/<$ true valid-expression))
        (frp/stepper false)))
 
-(aid/defcurried get-transform-node
+(defn get-none-value
+  [s x]
+  (aid/casep s
+    empty? s/NONE
+    x))
+
+(defn get-set-node-action**
   [s x y]
-  (partial s/setval*
-           [:node
-            (s/multi-path [:y-x
-                           (s/keypath [y
-                                       x])]
-                          [:x-y
-                           (s/keypath [x
-                                       y])])]
-           (aid/casep s
-             empty? s/NONE
-             s)))
+  #(let [id (get (:id %)
+                 [x
+                  y]
+                 (-> (random-uuid)
+                     str
+                     keyword))]
+     (->> %
+          (s/setval [:canonical
+                     id]
+                    (get-none-value s {:value s
+                                       :x     x
+                                       :y     y}))
+          (s/setval [:id
+                     (s/keypath [x
+                                 y])]
+                    (get-none-value s id)))))
 
-(def get-delete-node
-  (aid/build comp
-             (comp #(partial s/transform*
-                             :edge
-                             (partial (aid/flip graph/remove-nodes) %))
-                   vector)
-             (get-transform-node "")))
-
-(def get-nodes
-  (comp vector
-        vector))
-
-(defn get-paste-action
-  [node-register predecessors successors x y]
-  (comp (partial s/transform*
-                 :edge
-                 (partial (aid/flip graph/add-edges*)
-                          (concat (combo/cartesian-product predecessors
-                                                           (get-nodes x y))
-                                  (combo/cartesian-product (get-nodes x y)
-                                                           successors))))
-        (get-transform-node node-register x y)))
+(def get-set-action*
+  (comp ((aid/curry 3 s/transform*) :node)
+        get-set-node-action**))
 
 (def marker-size
   8)
@@ -330,49 +322,164 @@
   (comp (partial + (/ marker-size 2))
         (partial * cursor-size)))
 
-(defn get-delete-edge
-  [m x y]
-  (aid/if-else
-    (partial s/select-one* [:node :x-y (s/keypath [x y])])
+(def blockwise-visual-mode
+  (->> (m/<> (aid/<$ not blockwise-visual-toggle)
+             (aid/<$ (constantly false) (m/<> delete escape undo)))
+       (frp/accum false)
+       (frp/stepper false)))
+
+(def node-placeholder
+  [js/Number.POSITIVE_INFINITY js/Number.POSITIVE_INFINITY])
+
+(def blockwise-visual-node
+  (->> (frp/snapshot blockwise-visual-toggle
+                     cursor-x-behavior
+                     cursor-y-behavior)
+       (m/<$> rest)
+       (frp/stepper node-placeholder)))
+
+(aid/defcurried between?
+  [x y z]
+  (<= (min x y) z (max x y)))
+
+(def flast
+  (comp last
+        first))
+
+(defn make-between?*
+  [mode a0 a1]
+  (between? (if mode
+              a0
+              a1)
+            a1))
+
+(defn make-in?
+  [mode x0 x1 y0 y1]
+  (aid/build and
+             (comp (make-between?* mode x0 x1)
+                   ffirst)
+             (comp (make-between?* mode y0 y1)
+                   flast)))
+
+(defn get-id-path
+  [& more]
+  [:node
+   :id
+   s/ALL
+   (->> more
+        (apply make-in?)
+        s/pred)
+   s/LAST])
+
+(aid/defcurried select-ids
+  [mode x0 x1 y0 y1 m]
+  (s/select* (get-id-path mode x0 x1 y0 y1) m))
+
+(def get-size
+  (comp (partial * cursor-size)
+        inc
+        Math/abs
+        -))
+
+(defn get-delete-action*
+  [mode [x0 y0] x1 y1 line-segment]
+  (aid/if-then-else
+    (comp empty?
+          (select-ids mode x0 x1 y0 y1))
     (partial
       s/transform*
       :edge
-      (partial (aid/flip graph/remove-edges*)
-               (->> m
-                    (filter (comp (partial geom/intersect-line
-                                           (rect/rect (get-x-cursor-pixel x)
-                                                      (* y cursor-size)
-                                                      cursor-size
-                                                      cursor-size))
-                                  val))
-                    (map first))))))
+      (partial
+        (aid/flip graph/remove-edges*)
+        (->> line-segment
+             (filter (comp (partial geom/intersect-line
+                                    (rect/rect (get-x-cursor-pixel (min x0
+                                                                        x1))
+                                               (* (min y0 y1) cursor-size)
+                                               (get-size x0 x1)
+                                               (get-size y0 y1)))
+                           val))
+             (map first))))
+    (comp #(s/setval (s/multi-path (get-id-path mode x0 x1 y0 y1)
+                                   [:node
+                                    :canonical
+                                    (apply s/multi-path
+                                           (select-ids mode x0 x1 y0 y1 %))])
+                     s/NONE
+                     %)
+          (aid/transfer* :edge
+                         (aid/build (partial apply graph/remove-nodes)
+                                    :edge
+                                    (select-ids mode x0 x1 y0 y1))))))
+
+(defn offset-paste
+  [k a register]
+  (s/transform [s/MAP-VALS k] (partial + a) register))
+
+(def get-coordinate-id
+  (comp (partial apply
+                 hash-map)
+        (partial mapcat (aid/build vector
+                                   (comp (juxt :x :y)
+                                         last)
+                                   first))))
+
+(def augment
+  (comp (partial zipmap [:canonical :id])
+        (juxt identity
+              get-coordinate-id)))
+
+(defn deep-merge-with
+  [f & more]
+  (aid/if-then-else (partial every? map?)
+                    (partial apply
+                             merge-with
+                             (partial deep-merge-with f))
+                    (partial apply f)
+                    more))
+
+(def deep-merge
+  (partial deep-merge-with (comp last
+                                 vector)))
+
+(defn get-paste-action*
+  [node-register edge-register x y]
+  (comp (aid/build (partial s/transform* :edge)
+                   (comp (aid/flip (aid/curry 2 graph/add-edges*))
+                         graph/edges
+                         (partial graph/subgraph edge-register)
+                         keys
+                         :canonical
+                         :node)
+                   identity)
+        (partial s/transform* :node (partial deep-merge (->> node-register
+                                                             (offset-paste :x x)
+                                                             (offset-paste :y y)
+                                                             augment)))))
 
 (def graph-action
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
                                 (core/filter last)
                                 (m/<$> first))
-                           ((aid/lift-a get-transform-node)
+                           ((aid/lift-a get-set-action*)
                              (frp/stepper "" valid-expression)
                              cursor-x-behavior
                              cursor-y-behavior))
              (frp/snapshot delete
-                           ((aid/lift-a get-delete-edge)
-                             (frp/stepper {} source-line-segment)
+                           ((aid/lift-a get-delete-action*)
+                             blockwise-visual-mode
+                             blockwise-visual-node
                              cursor-x-behavior
-                             cursor-y-behavior))
-             (frp/snapshot delete
-                           ((aid/lift-a get-delete-node)
-                             cursor-x-behavior
-                             cursor-y-behavior))
+                             cursor-y-behavior
+                             (frp/stepper {} source-line-segment)))
              (frp/snapshot paste
-                           ((aid/lift-a get-paste-action)
-                             (frp/stepper "" source-node-register)
-                             (frp/stepper #{} source-predecessors-register)
-                             (frp/stepper #{} source-successors-register)
+                           ((aid/lift-a get-paste-action*)
+                             (frp/stepper {} source-node-register)
+                             (frp/stepper initial-edge source-edge-register)
                              cursor-x-behavior
                              cursor-y-behavior)))
        (m/<$> last)
-       (m/<> source-transform-edge)))
+       (m/<> source-transform-edge-action)))
 
 (def action
   (m/<$> (comp #(aid/if-else (comp (aid/build =
@@ -405,8 +512,10 @@
         vector))
 
 (def initial-history
-  (get-history {:node initial-table
-                :edge initial-edge}))
+  (get-history {:node initial-node
+                :edge initial-edge
+                :x    initial-cursor
+                :y    initial-cursor}))
 
 (def reset
   (m/<$> (comp constantly
@@ -437,26 +546,84 @@
 (def sink-content
   (m/<$> ffirst history))
 
-(def edge
+(def edge-event
   (m/<$> :edge sink-content))
 
-(def initial-x-y
-  {})
+(def edge-behavior
+  (frp/stepper initial-edge edge-event))
 
-(def x-y-event
-  (->> (frp/snapshot valid-expression
-                     cursor-x-behavior
-                     cursor-y-behavior)
-       (m/<$> (fn [[s x y]]
-                (partial s/setval* (s/keypath [x y]) s)))
+(def node-event
+  (->> (frp/snapshot valid-expression cursor-x-behavior cursor-y-behavior)
+       (m/<$> (partial apply get-set-node-action**))
        (m/<> (m/<$> (comp constantly
-                          :x-y
                           :node)
                     sink-content))
-       (frp/accum initial-x-y)))
+       (frp/accum initial-node)))
 
-(def x-y-behavior
-  (frp/stepper initial-x-y x-y-event))
+(def node-behavior
+  (frp/stepper initial-node node-event))
+
+(def canonical
+  (m/<$> :canonical node-behavior))
+
+(def id
+  (m/<$> :id node-behavior))
+
+(defn make-offset-register
+  [mode k a0 a1]
+  (aid/build (partial s/transform* [s/MAP-VALS k])
+             (comp (aid/flip (aid/curry 2 -))
+                   (partial apply
+                            min
+                            (if mode
+                              a0
+                              js/Number.POSITIVE_INFINITY)
+                            a1)
+                   (partial map k)
+                   vals)
+             identity))
+
+(def sink-node-register
+  (m/<$> (fn [[_ m mode [x0 y0] x1 y1]]
+           (->> m
+                (s/setval [s/ALL
+                           (-> (aid/build and
+                                          (comp (make-between?* mode x0 x1)
+                                                :x
+                                                last)
+                                          (comp (make-between?* mode y0 y1)
+                                                :y
+                                                last))
+                               complement
+                               s/pred)]
+                          s/NONE)
+                ((make-offset-register mode :x x0 x1))
+                ((make-offset-register mode :y y0 y1))))
+         (frp/snapshot delete
+                       canonical
+                       blockwise-visual-mode
+                       blockwise-visual-node
+                       cursor-x-behavior
+                       cursor-y-behavior)))
+
+(def neighbors
+  (aid/build set/union
+             graph/predecessors
+             graph/successors))
+
+(def get-nodes
+  (aid/build conj
+             neighbors
+             (comp last
+                   vector)))
+
+(def sink-edge-register
+  (m/<$> (fn [[node-register edge]]
+           (->> node-register
+                keys
+                (mapcat (partial get-nodes edge))
+                (graph/subgraph edge)))
+         (frp/snapshot sink-node-register edge-behavior)))
 
 (aid/defcurried extract-insert
   [n coll]
@@ -478,47 +645,30 @@
 (def insert-text
   (->> insert-typing
        (m/<> (zip-entities (fn [[x y m]]
-                             (get m [x y] ""))
-                           [cursor-x-event cursor-y-event x-y-event]
+                             (if-let [id* ((:id m) [x y])]
+                               (-> m
+                                   :canonical
+                                   id*
+                                   :value)
+                               ""))
+                           [cursor-x-event cursor-y-event node-event]
                            [cursor-x-behavior
                             cursor-y-behavior
-                            x-y-behavior]))
+                            node-behavior]))
        (frp/stepper "")))
-
-(def sink-node-register
-  ;TODO take visual mode into account
-  (->> insert-text
-       (frp/snapshot (m/<> delete paste))
-       (m/<$> last)
-       (core/remove empty?)))
-
-(def node-snapshot
-  (->> edge
-       (frp/stepper initial-edge)
-       (frp/snapshot sink-node-register cursor-x-behavior cursor-y-behavior)))
-
-(def get-edge-register
-  #(m/<$> (fn [[_ x y edge*]]
-            (% edge* [x y]))
-          node-snapshot))
-
-(def sink-predecessors-register
-  (get-edge-register loom/predecessors))
-
-(def sink-successors-register
-  (get-edge-register loom/successors))
 
 (def edge-node-event
   (->> (frp/snapshot implication
                      insert-text
                      cursor-x-behavior
-                     cursor-y-behavior)
+                     cursor-y-behavior
+                     id)
        (core/remove (comp empty?
                           second))
-       (m/<$> (partial drop 2))))
-
-(def node-placeholder
-  [])
+       (m/<$> (comp (aid/build aid/funcall
+                               last
+                               (partial take 2))
+                    (partial drop 2)))))
 
 (def edge-node-behavior
   (frp/stepper node-placeholder edge-node-event))
@@ -533,7 +683,7 @@
                      (frp/stepper 0 source-scroll-y))
        (m/<$> (comp (aid/flip (aid/curry 2 merge))
                     (aid/build hash-map
-                               (juxt :x :y)
+                               :id
                                identity)
                     (fn [[bound scroll-x scroll-y]]
                       (->> bound
@@ -541,20 +691,23 @@
                            (add-scroll :top :bottom scroll-y)))))
        (m/<> (m/<$> (comp (aid/curry 2 s/select-one*)
                           s/submap
-                          keys)
-                    x-y-event))
+                          keys
+                          :canonical)
+                    node-event))
        (frp/accum {})
-       (m/<$> vals)))
+       (m/<$> (aid/if-then-else empty?
+                                (constantly [])
+                                vals))))
 
 (def make-directional
   #(comp (partial apply =)
          (partial map %)))
 
 (def horizontal?
-  (make-directional :y))
+  (make-directional :top))
 
 (def vertical?
-  (make-directional :x))
+  (make-directional :left))
 
 (def oblique?
   (complement (aid/build or
@@ -588,8 +741,7 @@
                                     :width
                                     :height)
                           in)
-                        (line/line2 (f out)
-                                    (f in)))])
+                        (line/line2 (f out) (f in)))])
 
 (def get-left-top-line-segment
   (get-intersection-line-segment get-left-top))
@@ -625,14 +777,14 @@
     (aid/if-then-else corners?
                       get-corner-line-segment
                       (get-intersection-line-segment get-center))
-    (aid/if-then-else horizontal?
+    (aid/if-then-else (comp horizontal?)
                       (comp (partial s/transform*
                                      [s/ALL s/LAST]
                                      (partial + font-size))
                             get-left-top-line-segment)
                       get-left-top-line-segment)))
 
-(def x-y-edge
+(def correspondence
   ((aid/lift-a (fn [m coll]
                  (->> coll
                       (map (aid/if-then-else (partial every? m)
@@ -644,7 +796,7 @@
                       (apply merge {}))))
     (->> valid-bounds
          (m/<$> (aid/build zipmap
-                           (partial map (juxt :x :y))
+                           (partial map :id)
                            (partial map
                                     (comp (partial s/transform*
                                                    (s/multi-path :top
@@ -655,12 +807,12 @@
                                                                  :height)
                                                    shrink)))))
          (frp/stepper {}))
-    (->> edge
+    (->> edge-event
          (m/<$> graph/edges)
          (frp/stepper []))))
 
 (def sink-line-segment
-  (m/<$> (partial s/transform* s/MAP-VALS line/line2) x-y-edge))
+  (m/<$> (partial s/transform* s/MAP-VALS line/line2) correspondence))
 
 (def error
   (m/<$> get-error insert-text))
@@ -698,7 +850,7 @@
        (frp/snapshot sink-in)
        (m/<$> reverse)))
 
-(def sink-transform-edge
+(def sink-transform-edge-action
   (m/<$> #(partial s/transform* :edge (partial (aid/flip graph/add-edges) %))
          additional-edge))
 
@@ -733,13 +885,19 @@
 
 (def modification
   (->> buffer-entry
-       (m/<$> (partial s/transform* s/LAST (move* :content :history ffirst)))
+       (m/<$> (partial s/transform*
+                       s/LAST
+                       (move* :content
+                              :history
+                              (comp (partial s/transform* :node :canonical)
+                                    ffirst))))
        (core/remove (fn [[path* m]]
-                      (and (fs/fexists? path*)
-                           (-> path*
-                               slurp
-                               read-file
-                               (= m)))))))
+                      (or (empty? path*)
+                          (and (fs/fexists? path*)
+                               (-> path*
+                                   slurp
+                                   read-file
+                                   (= m))))))))
 
 (def initial-buffer
   {:history initial-history
@@ -757,7 +915,12 @@
                   fs/fexists? (->> k
                                    slurp
                                    read-file
-                                   (move* :history :content get-history)
+                                   (move* :history
+                                          :content
+                                          (comp get-history
+                                                (partial s/transform*
+                                                         :node
+                                                         augment)))
                                    (get m k))
                   initial-buffer)))))
 
@@ -822,7 +985,7 @@
        (frp/stepper true)))
 
 (defn get-scroll
-  [client bound offset cursor]
+  [client bound offset* cursor]
   (->> client
        (frp/snapshot (->> cursor
                           (frp/stepper initial-cursor)
@@ -837,7 +1000,7 @@
                           (max (-> x
                                    inc
                                    (* cursor-size)
-                                   (- (- view-size offset))))
+                                   (- (- view-size offset*))))
                           (min (* x cursor-size))))
                     initial-scroll)
        (frp/stepper initial-scroll)))
@@ -882,6 +1045,9 @@
              (effect #(reset! state {:arguments more
                                      :return    %})))))))
 
+(def get-status-text
+  #(.keyBinding.getStatusText (:editor %) (:editor %)))
+
 (defc editor
       [& _]
       (let [state (atom {})]
@@ -894,8 +1060,7 @@
                .textInput.getElement
                (.addEventListener
                  "keydown"
-                 #(editor-keydown [(.keyBinding.getStatusText (:editor @state)
-                                                              (:editor @state))
+                 #(editor-keydown [(get-status-text @state)
                                    (.-key %)])))
              (-> @state
                  :editor
@@ -903,8 +1068,9 @@
                  (.addEventListener
                    "keyup"
                    (fn [event*]
-                     (editor-keyup (.keyBinding.getStatusText (:editor @state)
-                                                              (:editor @state)))
+                     (-> @state
+                         get-status-text
+                         editor-keyup)
                      (swap! state
                             (partial s/setval*
                                      :backtick
@@ -920,8 +1086,8 @@
                    :editor
                    .blur)))
            :reagent-render
-           (fn [mode* text*]
-             (swap! state (partial s/setval* :mode mode*))
+           (fn [mode text]
+             (swap! state (partial s/setval* :mode mode))
              [:> ace-editor
               {:commands         [{:name    "`"
                                    :bindKey "`"
@@ -931,7 +1097,7 @@
                                                       (aid/casep @state
                                                         :backtick "\\lambda"
                                                         "l"))}]
-               :focus            (= :insert mode*)
+               :focus            (= :insert mode)
                :keyboard-handler "vim"
                :mode             "latex"
                :on-change        #(insert-typing %)
@@ -944,7 +1110,7 @@
                                   :height    "100%"
                                   :width     "100%"}
                :theme            "terminal"
-               :value            text*}])})))
+               :value            text}])})))
 
 (defn math
   [s]
@@ -956,7 +1122,7 @@
 (def background-color
   "black")
 
-(def out-color
+(def selection-color
   "grey")
 
 (def color
@@ -966,34 +1132,34 @@
   1)
 
 (defn get-node-color
-  [mode* edge-node x-y]
-  (if (and mode*
-           (= edge-node x-y))
-    out-color
+  [mode edge-node id*]
+  (if (and mode
+           (= edge-node id*))
+    selection-color
     background-color))
 
 (defn math-node
   [& _]
   (let [state (r/atom {:height maximum-pixel})]
-    (fn [mode* edge-node [[x y :as coll] s]]
+    (fn [mode edge-node [id* {:keys [value x y]}]]
       [:g
        [:rect (merge (s/transform :height shrink @state)
-                     {:fill  (get-node-color mode* edge-node coll)
-                      :style {:outline-color (get-node-color mode*
+                     {:fill  (get-node-color mode edge-node id*)
+                      :style {:outline-color (get-node-color mode
                                                              edge-node
-                                                             coll)
+                                                             id*)
                               :outline-style "solid"
                               :outline-width outline-width}
                       :x     (get-x-cursor-pixel x)
                       :y     (* y cursor-size)})]
+       ^{:key id*}
        [:> measure
         {:bounds    true
          :on-resize #(-> %
                          .-bounds
                          (js->clj :keywordize-keys true)
                          ((juxt (comp bounds
-                                      (partial merge {:x x
-                                                      :y y}))
+                                      (partial s/setval* :id id*))
                                 (partial reset! state))))}
         #(r/as-element [:foreignObject {:x (get-x-cursor-pixel x)
                                         :y (* y cursor-size)}
@@ -1001,7 +1167,7 @@
                                :style {:display       "inline-block"
                                        :margin-bottom (- marker-size)
                                        :margin-top    (- marker-size)}}
-                         [math (align s)]]])]])))
+                         [math (align value)]]])]])))
 
 (def maximum-z-index
   ;https://stackoverflow.com/a/25461690
@@ -1046,8 +1212,8 @@
                                    :value       s}])}))
 
 (defc command-component
-      [mode* command-text*]
-      [:form {:style     {:display (case mode*
+      [mode command-text*]
+      [:form {:style     {:display (case mode
                                      :command "block"
                                      "none")}
               :on-submit #(submission command-text*)}
@@ -1085,9 +1251,9 @@
         r/dom-node))
 
 (defc nodes
-      [mode* edge-node x-y*]
-      (->> x-y*
-           (mapv (partial vector math-node mode* edge-node))
+      [mode edge-node canonical*]
+      (->> canonical*
+           (mapv (partial vector math-node mode edge-node))
            (s/setval s/BEFORE-ELEM :g)))
 
 (def edge-component
@@ -1101,10 +1267,20 @@
         last))
 
 (defc edges-component
-      [edges*]
-      (->> edges*
+      [correspondence*]
+      (->> correspondence*
            (mapv edge-component)
            (s/setval s/BEFORE-ELEM :g)))
+
+(defc blockwise-visual-component
+      [mode [x0 y0] x1 y1]
+      [:rect (if mode
+               {:fill   selection-color
+                :height (get-size y1 y0)
+                :width  (get-size x1 x0)
+                :x      (get-x-cursor-pixel (min x0 x1))
+                :y      (* (min y0 y1) cursor-size)}
+               {})])
 
 (def ref-x
   2)
@@ -1130,24 +1306,26 @@
                                    (js/window.addEventListener "resize"
                                                                (fn [_]
                                                                  (dom* this))))
-           :component-did-update (fn [this]
-                                   (-> this
-                                       r/dom-node
-                                       (.scrollTo (:x @state)
-                                                  (:y @state))))
+           :component-did-update #(-> %
+                                      r/dom-node
+                                      (.scrollTo (:x @state)
+                                                 (:y @state)))
            :reagent-render       (fn [scroll-x*
                                       scroll-y*
                                       maximum-x
                                       maximum-y
-                                      mode*
+                                      edge-mode*
                                       edge-node
-                                      x-y*
-                                      edges*
+                                      canonical*
+                                      correspondence*
+                                      blockwise-visual-mode*
+                                      blockwise-visual-node*
                                       cursor-x
                                       cursor-y]
-                                   (swap! state (partial (aid/flip merge)
-                                                         {:x scroll-x*
-                                                          :y scroll-y*}))
+                                   (swap! state
+                                          (partial (aid/flip merge)
+                                                   {:x scroll-x*
+                                                    :y scroll-y*}))
                                    [:div {:style {:height   "100%"
                                                   :overflow "scroll"
                                                   :width    "100%"}}
@@ -1162,8 +1340,13 @@
                                                :view-box      view-box}
                                       [:path {:d    path-d
                                               :fill color}]]
-                                     [edges-component edges*]
-                                     [nodes mode* edge-node x-y*]
+                                     [blockwise-visual-component
+                                      blockwise-visual-mode*
+                                      blockwise-visual-node*
+                                      cursor-x
+                                      cursor-y]
+                                     [edges-component correspondence*]
+                                     [nodes edge-mode* edge-node canonical*]
                                      [:rect
                                       {:height  cursor-size
                                        :opacity 0
@@ -1174,7 +1357,8 @@
                                                  :outline-width  outline-width}
                                        :width   cursor-size
                                        :x       (get-x-cursor-pixel cursor-x)
-                                       :y       (* cursor-y cursor-size)}]]])})))
+                                       :y       (* cursor-y
+                                                   cursor-size)}]]])})))
 
 (defc error-component
       [error* editor-command*]
@@ -1211,8 +1395,10 @@
     maximum-y
     edge-mode
     edge-node-behavior
-    x-y-behavior
-    x-y-edge
+    canonical
+    correspondence
+    blockwise-visual-mode
+    blockwise-visual-node
     cursor-x-behavior
     cursor-y-behavior))
 
@@ -1237,17 +1423,16 @@
 (def loop-event
   (partial run! (partial apply frp/run)))
 
-(loop-event {source-directory             sink-directory
+(loop-event {source-buffer                sink-buffer
              source-content               sink-content
-             source-buffer                sink-buffer
+             source-directory             sink-directory
+             source-edge-register         sink-edge-register
              source-in                    sink-in
              source-line-segment          sink-line-segment
              source-node-register         sink-node-register
-             source-predecessors-register sink-predecessors-register
              source-scroll-x              sink-scroll-x
              source-scroll-y              sink-scroll-y
-             source-successors-register   sink-successors-register
-             source-transform-edge        sink-transform-edge})
+             source-transform-edge-action sink-transform-edge-action})
 
 (frp/run #(oset! js/document "title" %) current-file-path)
 
@@ -1268,7 +1453,8 @@
    "^"      carrot
    "\\"     implication
    "ctrl+r" redo
-   "escape" normal-escape
+   "ctrl+v" blockwise-visual-toggle
+   "escape" escape
    "h"      left
    "i"      insert-insert
    "j"      down
@@ -1288,13 +1474,12 @@
                                                     ["<Esc>"]
                                                     ["insert" "command"])))
 
-;TODO move this call down
-(frp/activate)
-
-(run! submission config-commands)
-
-(frp/run (partial apply spit) modification)
-
 (.ipcRenderer.on helpers/electron helpers/channel (comp potential-file-path
                                                         last
                                                         vector))
+
+(frp/run (partial apply spit) modification)
+
+(frp/activate)
+
+(run! submission config-commands)
