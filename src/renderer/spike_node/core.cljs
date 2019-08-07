@@ -1,6 +1,7 @@
 (ns spike-node.core
-  (:require [clojure.string :as str]
-            [cljs.tools.reader.edn :as edn]
+  (:require [cljs.tools.reader.edn :as edn]
+            [clojure.set :as set]
+            [clojure.string :as str]
             ace
             ace-editor
             [aid.core :as aid]
@@ -23,8 +24,7 @@
             [thi.ng.geom.core :as geom]
             [spike-node.helpers :as helpers]
             [spike-node.loom :as loom]
-            [spike-node.parse.core :as parse]
-            [clojure.set :as set])
+            [spike-node.parse.core :as parse])
   (:require-macros [spike-node.core :refer [defc]]))
 
 (frp/defe source-buffer
