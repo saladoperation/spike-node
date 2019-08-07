@@ -386,6 +386,17 @@
         Math/abs
         -))
 
+(defn make-delete-nodes
+  [mode x0 x1 y0 y1]
+  #(s/setval (s/multi-path (get-id-path mode x0 x1 y0 y1)
+                           [:node
+                            :canonical
+                            (->> %
+                                 (select-ids mode x0 x1 y0 y1)
+                                 (apply s/multi-path))])
+             s/NONE
+             %))
+
 (defn get-delete-action*
   [mode [x0 y0] x1 y1 line-segment]
   (aid/if-then-else
@@ -405,14 +416,7 @@
                                                (get-size y0 y1)))
                            val))
              (map first))))
-    (comp #(s/setval (s/multi-path (get-id-path mode x0 x1 y0 y1)
-                                   [:node
-                                    :canonical
-                                    (->> %
-                                         (select-ids mode x0 x1 y0 y1)
-                                         (apply s/multi-path))])
-                     s/NONE
-                     %)
+    (comp (make-delete-nodes mode x0 x1 y0 y1)
           (aid/transfer* :edge
                          (aid/build (partial apply graph/remove-nodes)
                                     :edge
@@ -449,7 +453,7 @@
                                  vector)))
 
 (defn get-paste-action*
-  [node-register edge-register x y]
+  [dimension node-register edge-register x y]
   (let [remapping (s/transform s/MAP-VALS
                                (fn [_]
                                  (get-uuid-keyword))
@@ -465,11 +469,24 @@
                      identity)
           (partial s/transform*
                    :node
-                   (partial deep-merge (->> node-register
-                                            (s/transform s/MAP-KEYS remapping)
-                                            (offset-paste :x x)
-                                            (offset-paste :y y)
-                                            augment))))))
+                   (partial deep-merge
+                            (->> node-register
+                                 (s/transform s/MAP-KEYS remapping)
+                                 (offset-paste :x x)
+                                 (offset-paste :y y)
+                                 augment)))
+          (make-delete-nodes true
+                             x
+                             (-> dimension
+                                 first
+                                 (+ x))
+                             y
+                             (-> dimension
+                                 last
+                                 (+ y))))))
+
+(def initial-dimension
+  [0 0])
 
 (def graph-action
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
@@ -488,6 +505,8 @@
                              (frp/stepper {} source-line-segment)))
              (frp/snapshot paste
                            ((aid/lift-a get-paste-action*)
+                             (frp/stepper initial-dimension
+                                          source-dimension-register)
                              (frp/stepper {} source-node-register)
                              (frp/stepper initial-edge source-edge-register)
                              cursor-x-behavior
@@ -628,7 +647,7 @@
   (m/<$> (fn [[_ mode a & b]]
            (if mode
              (map distance a b)
-             [0 0]))
+             initial-dimension))
          (frp/snapshot delete
                        blockwise-visual-mode
                        blockwise-visual-node
