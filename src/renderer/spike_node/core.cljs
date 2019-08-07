@@ -407,8 +407,9 @@
     (comp #(s/setval (s/multi-path (get-id-path mode x0 x1 y0 y1)
                                    [:node
                                     :canonical
-                                    (apply s/multi-path
-                                           (select-ids mode x0 x1 y0 y1 %))])
+                                    (->> %
+                                         (select-ids mode x0 x1 y0 y1)
+                                         (apply s/multi-path))])
                      s/NONE
                      %)
           (aid/transfer* :edge
