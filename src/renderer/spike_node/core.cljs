@@ -725,7 +725,7 @@
   [k0 k1 scroll bound]
   (s/transform (s/multi-path k0 k1) (partial + scroll) bound))
 
-(def valid-bounds
+(def valid-bound-event
   (->> (frp/snapshot bounds
                      (frp/stepper 0 source-scroll-x)
                      (frp/stepper 0 source-scroll-y))
@@ -742,10 +742,10 @@
                           keys
                           :canonical)
                     node-event))
-       (frp/accum {})
-       (m/<$> (aid/if-then-else empty?
-                                (constantly [])
-                                vals))))
+       (frp/accum {})))
+
+(def valid-bound-behavior
+  (frp/stepper {} valid-bound-event))
 
 (def make-directional
   #(comp (partial apply =)
@@ -842,19 +842,17 @@
                                                               (partial map m)))
                                              (constantly {})))
                       (apply merge {}))))
-    (->> valid-bounds
-         (m/<$> (aid/build zipmap
-                           (partial map :id)
-                           (partial map
-                                    (comp (partial s/transform*
-                                                   (s/multi-path :top
-                                                                 :bottom)
-                                                   (partial + marker-size))
-                                          (partial s/transform*
-                                                   (s/multi-path :bottom
-                                                                 :height)
-                                                   shrink)))))
-         (frp/stepper {}))
+    (m/<$> (partial s/transform*
+                    s/MAP-VALS
+                    (comp (partial s/transform*
+                                   (s/multi-path :top
+                                                 :bottom)
+                                   (partial + marker-size))
+                          (partial s/transform*
+                                   (s/multi-path :bottom
+                                                 :height)
+                                   shrink)))
+           valid-bound-behavior)
     (->> edge-event
          (m/<$> graph/edges)
          (frp/stepper []))))
@@ -993,27 +991,26 @@
        (frp/stepper maximum-pixel)))
 
 (def editing-bound
-  (->> (frp/snapshot valid-bounds
+  (->> (frp/snapshot valid-bound-event
+                     id
                      cursor-x-behavior
                      cursor-y-behavior)
        (core/partition 2 1)
        (core/filter (comp (partial apply =)
-                          (partial map rest)))
+                          (partial map (partial drop 2))))
        (m/<$> last)
        (m/<> (m/<$> rest
                     (frp/snapshot insert-insert
-                                  (frp/stepper [] valid-bounds)
+                                  valid-bound-behavior
+                                  id
                                   cursor-x-behavior
                                   cursor-y-behavior)))
-       (m/<$> (fn [[m x y]]
-                (->> m
-                     (filter (comp (partial = x)
-                                   :x))
-                     (filter (comp (partial = y)
-                                   :y))
-                     (aid/if-then-else empty?
-                                       (constantly {})
-                                       first))))))
+       (m/<$> (fn [[m id & coordinate]]
+                (aid/if-then-else id
+                                  (comp m
+                                        id)
+                                  (constantly {})
+                                  coordinate)))))
 
 (def get-editing-bound
   #(m/<$> (comp (partial (aid/flip quot) cursor-size)
