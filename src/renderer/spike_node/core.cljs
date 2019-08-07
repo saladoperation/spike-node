@@ -442,7 +442,6 @@
   (partial deep-merge-with (comp last
                                  vector)))
 
-
 (defn get-paste-action*
   [register x y]
   (partial s/transform* :node (partial deep-merge (->> register
