@@ -23,7 +23,8 @@
             [thi.ng.geom.core :as geom]
             [spike-node.helpers :as helpers]
             [spike-node.loom :as loom]
-            [spike-node.parse.core :as parse])
+            [spike-node.parse.core :as parse]
+            [clojure.set :as set])
   (:require-macros [spike-node.core :refer [defc]]))
 
 (frp/defe source-buffer
@@ -536,8 +537,11 @@
 (def sink-content
   (m/<$> ffirst history))
 
-(def edge
+(def edge-event
   (m/<$> :edge sink-content))
+
+(def edge-behavior
+  (frp/stepper initial-edge edge-event))
 
 (def node-event
   (->> (frp/snapshot valid-expression cursor-x-behavior cursor-y-behavior)
@@ -587,6 +591,25 @@
                        blockwise-visual-node
                        cursor-x-behavior
                        cursor-y-behavior)))
+
+(def neighbors
+  (aid/build set/union
+             graph/predecessors
+             graph/successors))
+
+(def get-nodes
+  (aid/build conj
+             neighbors
+             (comp last
+                   vector)))
+
+(def sink-edge-register
+  (m/<$> (fn [[node-register edge]]
+           (->> node-register
+                keys
+                (mapcat (partial get-nodes edge))
+                (graph/subgraph edge)))
+         (frp/snapshot sink-node-register edge-behavior)))
 
 (aid/defcurried extract-insert
   [n coll]
@@ -770,7 +793,7 @@
                                                                  :height)
                                                    shrink)))))
          (frp/stepper {}))
-    (->> edge
+    (->> edge-event
          (m/<$> graph/edges)
          (frp/stepper []))))
 
