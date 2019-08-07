@@ -30,6 +30,7 @@
 (frp/defe source-buffer
           source-content
           source-directory
+          source-edge-register
           source-in
           source-line-segment
           source-node-register
@@ -1407,9 +1408,10 @@
 (def loop-event
   (partial run! (partial apply frp/run)))
 
-(loop-event {source-directory             sink-directory
+(loop-event {source-buffer                sink-buffer
              source-content               sink-content
-             source-buffer                sink-buffer
+             source-directory             sink-directory
+             source-edge-register         sink-edge-register
              source-in                    sink-in
              source-line-segment          sink-line-segment
              source-node-register         sink-node-register
