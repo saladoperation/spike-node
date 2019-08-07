@@ -303,7 +303,7 @@
                                  y])]
                     (get-none-value s id)))))
 
-(def get-set-node-action*
+(def get-set-action*
   (comp ((aid/curry 3 s/transform*) :node)
         get-set-node-action**))
 
@@ -379,7 +379,7 @@
         Math/abs
         -))
 
-(defn get-delete-nodes-action*
+(defn get-delete-action*
   [mode [x0 y0] x1 y1 line-segment]
   (aid/if-then-else
     (comp empty?
@@ -452,12 +452,12 @@
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
                                 (core/filter last)
                                 (m/<$> first))
-                           ((aid/lift-a get-set-node-action*)
+                           ((aid/lift-a get-set-action*)
                              (frp/stepper "" valid-expression)
                              cursor-x-behavior
                              cursor-y-behavior))
              (frp/snapshot delete
-                           ((aid/lift-a get-delete-nodes-action*)
+                           ((aid/lift-a get-delete-action*)
                              blockwise-visual-mode
                              blockwise-visual-node
                              cursor-x-behavior
