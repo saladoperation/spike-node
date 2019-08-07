@@ -327,7 +327,7 @@
        (frp/stepper false)))
 
 (def node-placeholder
-  [])
+  [js/Number.POSITIVE_INFINITY js/Number.POSITIVE_INFINITY])
 
 (def blockwise-visual-node
   (->> (frp/snapshot blockwise-visual-toggle
