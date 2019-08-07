@@ -15,8 +15,8 @@
             [frp.clojure.core :as core]
             [frp.core :as frp]
             katex
-            measure
             [loom.graph :as graph]
+            measure
             [oops.core :refer [oget+ oset!]]
             [reagent.core :as r]
             [thi.ng.geom.line :as line]
@@ -286,14 +286,18 @@
     empty? s/NONE
     x))
 
+(defn get-uuid-keyword
+  []
+  (-> (random-uuid)
+      str
+      keyword))
+
 (defn get-set-node-action**
   [s x y]
   #(let [id (get (:id %)
                  [x
                   y]
-                 (-> (random-uuid)
-                     str
-                     keyword))]
+                 (get-uuid-keyword))]
      (->> %
           (s/setval [:canonical
                      id]
@@ -444,18 +448,26 @@
 
 (defn get-paste-action*
   [node-register edge-register x y]
-  (comp (aid/build (partial s/transform* :edge)
-                   (comp (aid/flip (aid/curry 2 graph/add-edges*))
-                         graph/edges
-                         (partial graph/subgraph edge-register)
-                         keys
-                         :canonical
-                         :node)
-                   identity)
-        (partial s/transform* :node (partial deep-merge (->> node-register
-                                                             (offset-paste :x x)
-                                                             (offset-paste :y y)
-                                                             augment)))))
+  (let [remapping (s/transform s/MAP-VALS
+                               (fn [_]
+                                 (get-uuid-keyword))
+                               node-register)]
+    (comp (aid/build (partial s/transform* :edge)
+                     (comp (aid/flip (aid/curry 2 graph/add-edges*))
+                           graph/edges
+                           (partial graph/subgraph edge-register)
+                           (partial map (set/map-invert remapping))
+                           keys
+                           :canonical
+                           :node)
+                     identity)
+          (partial s/transform*
+                   :node
+                   (partial deep-merge (->> node-register
+                                            (s/transform s/MAP-KEYS remapping)
+                                            (offset-paste :x x)
+                                            (offset-paste :y y)
+                                            augment))))))
 
 (def graph-action
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
