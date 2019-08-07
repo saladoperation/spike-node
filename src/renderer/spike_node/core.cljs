@@ -443,11 +443,19 @@
                                  vector)))
 
 (defn get-paste-action*
-  [register x y]
-  (partial s/transform* :node (partial deep-merge (->> register
-                                                       (offset-paste :x x)
-                                                       (offset-paste :y y)
-                                                       augment))))
+  [node-register edge-register x y]
+  (comp (aid/build (partial s/transform* :edge)
+                   (comp (aid/flip (aid/curry 2 graph/add-edges*))
+                         graph/edges
+                         (partial graph/subgraph edge-register)
+                         keys
+                         :canonical
+                         :node)
+                   identity)
+        (partial s/transform* :node (partial deep-merge (->> node-register
+                                                             (offset-paste :x x)
+                                                             (offset-paste :y y)
+                                                             augment)))))
 
 (def graph-action
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
@@ -467,6 +475,7 @@
              (frp/snapshot paste
                            ((aid/lift-a get-paste-action*)
                              (frp/stepper {} source-node-register)
+                             (frp/stepper initial-edge source-edge-register)
                              cursor-x-behavior
                              cursor-y-behavior)))
        (m/<$> last)
