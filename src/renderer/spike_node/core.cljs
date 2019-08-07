@@ -619,6 +619,21 @@
                        cursor-x-behavior
                        cursor-y-behavior)))
 
+(def distance
+  (comp Math/abs
+        -))
+
+(def dimension-register
+  (m/<$> (fn [[_ mode a & b]]
+           (if mode
+             (map distance a b)
+             [0 0]))
+         (frp/snapshot delete
+                       blockwise-visual-mode
+                       blockwise-visual-node
+                       cursor-x-behavior
+                       cursor-y-behavior)))
+
 (def neighbors
   (aid/build set/union
              graph/predecessors
