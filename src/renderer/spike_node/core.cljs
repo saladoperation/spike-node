@@ -31,6 +31,7 @@
           source-directory
           source-in
           source-line-segment
+          source-node-register
           source-scroll-x
           source-scroll-y
           source-transform-edge-action
@@ -409,6 +410,44 @@
                                     :edge
                                     (select-ids mode x0 x1 y0 y1))))))
 
+(defn offset-paste
+  [k a register]
+  (s/transform [s/MAP-VALS k] (partial + a) register))
+
+(def get-coordinate-id
+  (comp (partial apply
+                 hash-map)
+        (partial mapcat (aid/build vector
+                                   (comp (juxt :x :y)
+                                         last)
+                                   first))))
+
+(def augment
+  (comp (partial zipmap [:canonical :id])
+        (juxt identity
+              get-coordinate-id)))
+
+(defn deep-merge-with
+  [f & more]
+  (aid/if-then-else (partial every? map?)
+                    (partial apply
+                             merge-with
+                             (partial deep-merge-with f))
+                    (partial apply f)
+                    more))
+
+(def deep-merge
+  (partial deep-merge-with (comp last
+                                 vector)))
+
+
+(defn get-paste-action*
+  [register x y]
+  (partial s/transform* :node (partial deep-merge (->> register
+                                                       (offset-paste :x x)
+                                                       (offset-paste :y y)
+                                                       augment))))
+
 (def graph-action
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
                                 (core/filter last)
@@ -423,7 +462,12 @@
                              blockwise-visual-node
                              cursor-x-behavior
                              cursor-y-behavior
-                             (frp/stepper {} source-line-segment))))
+                             (frp/stepper {} source-line-segment)))
+             (frp/snapshot paste
+                           ((aid/lift-a get-paste-action*)
+                             (frp/stepper {} source-node-register)
+                             cursor-x-behavior
+                             cursor-y-behavior)))
        (m/<$> last)
        (m/<> source-transform-edge-action)))
 
@@ -512,7 +556,7 @@
 (def id
   (m/<$> :id node-behavior))
 
-(defn make-offset
+(defn make-offset-register
   [k a0 a1]
   (aid/build (partial s/transform* [s/MAP-VALS k])
              (comp (aid/flip (aid/curry 2 -))
@@ -521,7 +565,7 @@
                    vals)
              identity))
 
-(def node-register
+(def sink-node-register
   (m/<$> (fn [[_ m mode [x0 y0] x1 y1]]
            (->> m
                 (s/setval [s/ALL
@@ -535,8 +579,8 @@
                                complement
                                s/pred)]
                           s/NONE)
-                ((make-offset :x x0 x1))
-                ((make-offset :y y0 y1))))
+                ((make-offset-register :x x0 x1))
+                ((make-offset-register :y y0 y1))))
          (frp/snapshot delete
                        canonical
                        blockwise-visual-mode
@@ -822,19 +866,6 @@
   {:history initial-history
    :x       initial-cursor
    :y       initial-cursor})
-
-(def get-coordinate-id
-  (comp (partial apply
-                 hash-map)
-        (partial mapcat (aid/build vector
-                                   (comp (juxt :x :y)
-                                         last)
-                                   first))))
-
-(def augment
-  (comp (partial zipmap [:canonical :id])
-        (juxt identity
-              get-coordinate-id)))
 
 (def sink-buffer
   (->> buffer-entry
@@ -1358,6 +1389,7 @@
              source-buffer                sink-buffer
              source-in                    sink-in
              source-line-segment          sink-line-segment
+             source-node-register         sink-node-register
              source-scroll-x              sink-scroll-x
              source-scroll-y              sink-scroll-y
              source-transform-edge-action sink-transform-edge-action})
