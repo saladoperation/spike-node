@@ -29,6 +29,7 @@
 
 (frp/defe source-buffer
           source-content
+          source-dimension-register
           source-directory
           source-edge-register
           source-in
@@ -623,7 +624,7 @@
   (comp Math/abs
         -))
 
-(def dimension-register
+(def sink-dimension-register
   (m/<$> (fn [[_ mode a & b]]
            (if mode
              (map distance a b)
@@ -1454,6 +1455,7 @@
 (loop-event {source-buffer                sink-buffer
              source-content               sink-content
              source-directory             sink-directory
+             source-dimension-register    sink-dimension-register
              source-edge-register         sink-edge-register
              source-in                    sink-in
              source-line-segment          sink-line-segment
