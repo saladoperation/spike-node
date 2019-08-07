@@ -570,10 +570,15 @@
   (m/<$> :id node-behavior))
 
 (defn make-offset-register
-  [k a0 a1]
+  [mode k a0 a1]
   (aid/build (partial s/transform* [s/MAP-VALS k])
              (comp (aid/flip (aid/curry 2 -))
-                   (partial apply min a0 a1)
+                   (partial apply
+                            min
+                            (if mode
+                              a0
+                              js/Number.POSITIVE_INFINITY)
+                            a1)
                    (partial map k)
                    vals)
              identity))
@@ -592,8 +597,8 @@
                                complement
                                s/pred)]
                           s/NONE)
-                ((make-offset-register :x x0 x1))
-                ((make-offset-register :y y0 y1))))
+                ((make-offset-register mode :x x0 x1))
+                ((make-offset-register mode :y y0 y1))))
          (frp/snapshot delete
                        canonical
                        blockwise-visual-mode
