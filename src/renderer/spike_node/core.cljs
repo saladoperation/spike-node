@@ -458,7 +458,7 @@
 
 (def get-coordinate-id
   (comp (partial apply
-                 hash-map)
+                 sorted-map)
         (partial mapcat (aid/build vector
                                    (comp (juxt :x :y)
                                          last)
