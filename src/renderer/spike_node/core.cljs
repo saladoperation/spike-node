@@ -299,10 +299,11 @@
 
 (defn get-set-node-action**
   [s x y]
-  #(let [id (get (:id %)
-                 [x
-                  y]
-                 (get-uuid-keyword))]
+  #(let [id (-> %
+                :id
+                (get [x
+                      y]
+                     (get-uuid-keyword)))]
      (->> %
           (s/setval [:canonical
                      id]
