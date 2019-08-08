@@ -1129,29 +1129,26 @@
         (r/create-class
           {:component-did-mount
            (fn [_]
-             (->
-               @state
-               :editor
-               .textInput.getElement
-               (.addEventListener
-                 "keydown"
-                 #(editor-keydown [(get-status-text @state)
-                                   (.-key %)])))
              (-> @state
                  :editor
                  .textInput.getElement
-                 (.addEventListener
-                   "keyup"
-                   (fn [event*]
-                     (-> @state
-                         get-status-text
-                         editor-keyup)
-                     (swap! state
-                            (partial s/setval*
-                                     :backtick
-                                     (-> event*
-                                         .-key
-                                         (= "`"))))))))
+                 (.addEventListener "keydown"
+                                    #(editor-keydown [(get-status-text @state)
+                                                      (.-key %)])))
+             (-> @state
+                 :editor
+                 .textInput.getElement
+                 (.addEventListener "keyup"
+                                    (fn [event*]
+                                      (-> @state
+                                          get-status-text
+                                          editor-keyup)
+                                      (swap! state
+                                             (partial s/setval*
+                                                      :backtick
+                                                      (-> event*
+                                                          .-key
+                                                          (= "`"))))))))
            :component-did-update
            (fn [_]
              (if (-> @state
