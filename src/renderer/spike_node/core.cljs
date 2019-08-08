@@ -378,7 +378,7 @@
 
 (aid/defcurried select-ids
   [mode x0 x1 y0 y1 m]
-  (s/select* (get-id-path mode x0 x1 y0 y1) m))
+  (s/select (get-id-path mode x0 x1 y0 y1) m))
 
 (def get-size
   (comp (partial * cursor-size)
