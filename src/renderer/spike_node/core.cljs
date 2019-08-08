@@ -46,6 +46,7 @@
           right
           carrot
           delete
+          yank
           paste
           dom
           escape
@@ -330,7 +331,7 @@
 
 (def blockwise-visual-mode
   (->> (m/<> (aid/<$ not blockwise-visual-toggle)
-             (aid/<$ (constantly false) (m/<> delete escape undo)))
+             (aid/<$ (constantly false) (m/<> delete yank escape undo)))
        (frp/accum false)
        (frp/stepper false)))
 
@@ -1535,7 +1536,10 @@
    "p"      paste
    "space"  insert-normal
    "u"      undo
-   "x"      delete})
+   "x"      delete
+   ;TODO: when mousetrap starts to support all keys capture, replace "y" with all keys capture
+   ;https://github.com/ccampbell/mousetrap/issues/134
+   "y"      yank})
 
 (bind-keymap keymap)
 
