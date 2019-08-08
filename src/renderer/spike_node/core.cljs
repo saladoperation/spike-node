@@ -46,6 +46,8 @@
           right
           carrot
           delete
+          ;TODO: when mousetrap starts to support all keys capture, replace "y" with all keys capture
+          ;https://github.com/ccampbell/mousetrap/issues/134
           yank
           paste
           dom
@@ -663,7 +665,7 @@
                           s/NONE)
                 ((make-offset-register mode :x x0 x1))
                 ((make-offset-register mode :y y0 y1))))
-         (frp/snapshot delete
+         (frp/snapshot (m/<> delete yank)
                        canonical
                        blockwise-visual-mode
                        blockwise-visual-node
@@ -1537,8 +1539,6 @@
    "space"  insert-normal
    "u"      undo
    "x"      delete
-   ;TODO: when mousetrap starts to support all keys capture, replace "y" with all keys capture
-   ;https://github.com/ccampbell/mousetrap/issues/134
    "y"      yank})
 
 (bind-keymap keymap)
