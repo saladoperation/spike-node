@@ -45,6 +45,7 @@
           left
           right
           carrot
+          dollar
           delete
           ;TODO: when mousetrap starts to support all keys capture, replace "y" with all keys capture
           ;https://github.com/ccampbell/mousetrap/issues/134
@@ -1523,7 +1524,8 @@
   (partial run! (partial apply bind)))
 
 (def keymap
-  {":"      command
+  {"$"      dollar
+   ":"      command
    "\\"     implication
    "^"      carrot
    "ctrl+r" redo
