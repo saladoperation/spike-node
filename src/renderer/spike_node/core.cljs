@@ -380,11 +380,14 @@
   [mode x0 x1 y0 y1 m]
   (s/select (get-id-path mode x0 x1 y0 y1) m))
 
+(def distance
+  (comp Math/abs
+        -))
+
 (def get-size
   (comp (partial * cursor-size)
         inc
-        Math/abs
-        -))
+        distance))
 
 (defn make-delete-nodes
   [mode x0 x1 y0 y1]
@@ -638,10 +641,6 @@
                        blockwise-visual-node
                        cursor-x-behavior
                        cursor-y-behavior)))
-
-(def distance
-  (comp Math/abs
-        -))
 
 (def sink-dimension-register
   (m/<$> (fn [[_ mode a & b]]
