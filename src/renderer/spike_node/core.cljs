@@ -1,6 +1,7 @@
 (ns spike-node.core
-  (:require [clojure.string :as str]
-            [cljs.tools.reader.edn :as edn]
+  (:require [cljs.tools.reader.edn :as edn]
+            [clojure.set :as set]
+            [clojure.string :as str]
             ace
             ace-editor
             [aid.core :as aid]
@@ -14,8 +15,9 @@
             [frp.clojure.core :as core]
             [frp.core :as frp]
             katex
-            measure
             [loom.graph :as graph]
+            [loom.derived :as derived]
+            measure
             [oops.core :refer [oget+ oset!]]
             [reagent.core :as r]
             [thi.ng.geom.line :as line]
@@ -23,12 +25,12 @@
             [thi.ng.geom.core :as geom]
             [spike-node.helpers :as helpers]
             [spike-node.loom :as loom]
-            [spike-node.parse.core :as parse]
-            [clojure.set :as set])
+            [spike-node.parse.core :as parse])
   (:require-macros [spike-node.core :refer [defc]]))
 
 (frp/defe source-buffer
           source-content
+          source-dimension-register
           source-directory
           source-edge-register
           source-in
@@ -44,6 +46,9 @@
           right
           carrot
           delete
+          ;TODO: when mousetrap starts to support all keys capture, replace "y" with all keys capture
+          ;https://github.com/ccampbell/mousetrap/issues/134
+          yank
           paste
           dom
           escape
@@ -286,14 +291,19 @@
     empty? s/NONE
     x))
 
+(defn get-uuid-keyword
+  []
+  (-> (random-uuid)
+      str
+      keyword))
+
 (defn get-set-node-action**
   [s x y]
-  #(let [id (get (:id %)
-                 [x
-                  y]
-                 (-> (random-uuid)
-                     str
-                     keyword))]
+  #(let [id (-> %
+                :id
+                (get [x
+                      y]
+                     (get-uuid-keyword)))]
      (->> %
           (s/setval [:canonical
                      id]
@@ -324,7 +334,7 @@
 
 (def blockwise-visual-mode
   (->> (m/<> (aid/<$ not blockwise-visual-toggle)
-             (aid/<$ (constantly false) (m/<> delete escape undo)))
+             (aid/<$ (constantly false) (m/<> delete yank escape undo)))
        (frp/accum false)
        (frp/stepper false)))
 
@@ -373,13 +383,45 @@
 
 (aid/defcurried select-ids
   [mode x0 x1 y0 y1 m]
-  (s/select* (get-id-path mode x0 x1 y0 y1) m))
+  (s/select (get-id-path mode x0 x1 y0 y1) m))
 
-(def get-size
+(def distance
+  (comp Math/abs
+        -))
+
+(def get-size*
   (comp (partial * cursor-size)
         inc
-        Math/abs
-        -))
+        distance))
+
+(defn get-size
+  [mode a0 a1]
+  (get-size* (if mode
+               a0
+               a1)
+             a1))
+
+(defn make-delete-nodes
+  [mode x0 x1 y0 y1]
+  #(s/setval
+     (s/multi-path (get-id-path mode x0 x1 y0 y1)
+                   [:node
+                    :canonical
+                    (->> %
+                         (select-ids mode x0 x1 y0 y1)
+                         (apply (comp (aid/if-then-else empty?
+                                                        (constantly s/NONE)
+                                                        (partial apply
+                                                                 s/multi-path))
+                                      vector)))])
+     s/NONE
+     %))
+
+(defn get-minimum
+  [mode a0 a1]
+  (if mode
+    (min a0 a1)
+    a1))
 
 (defn get-delete-action*
   [mode [x0 y0] x1 y1 line-segment]
@@ -393,20 +435,17 @@
         (aid/flip graph/remove-edges*)
         (->> line-segment
              (filter (comp (partial geom/intersect-line
-                                    (rect/rect (get-x-cursor-pixel (min x0
-                                                                        x1))
-                                               (* (min y0 y1) cursor-size)
-                                               (get-size x0 x1)
-                                               (get-size y0 y1)))
+                                    (rect/rect (-> mode
+                                                   (get-minimum x0 x1)
+                                                   get-x-cursor-pixel)
+                                               (-> mode
+                                                   (get-minimum y0 y1)
+                                                   (* cursor-size))
+                                               (get-size mode x0 x1)
+                                               (get-size mode y0 y1)))
                            val))
              (map first))))
-    (comp #(s/setval (s/multi-path (get-id-path mode x0 x1 y0 y1)
-                                   [:node
-                                    :canonical
-                                    (apply s/multi-path
-                                           (select-ids mode x0 x1 y0 y1 %))])
-                     s/NONE
-                     %)
+    (comp (make-delete-nodes mode x0 x1 y0 y1)
           (aid/transfer* :edge
                          (aid/build (partial apply graph/remove-nodes)
                                     :edge
@@ -442,20 +481,46 @@
   (partial deep-merge-with (comp last
                                  vector)))
 
+(defn make-remap
+  [m]
+  #(get m % %))
+
 (defn get-paste-action*
-  [node-register edge-register x y]
-  (comp (aid/build (partial s/transform* :edge)
-                   (comp (aid/flip (aid/curry 2 graph/add-edges*))
-                         graph/edges
-                         (partial graph/subgraph edge-register)
-                         keys
-                         :canonical
-                         :node)
-                   identity)
-        (partial s/transform* :node (partial deep-merge (->> node-register
-                                                             (offset-paste :x x)
-                                                             (offset-paste :y y)
-                                                             augment)))))
+  [dimension node-register edge-register x y]
+  (let [remapping (s/transform s/MAP-VALS
+                               (fn [_]
+                                 (get-uuid-keyword))
+                               node-register)]
+    (comp (aid/build (partial s/transform* :edge)
+                     (comp (aid/flip (aid/curry 2 graph/add-edges*))
+                           graph/edges
+                           (partial graph/subgraph
+                                    (derived/mapped-by (make-remap remapping)
+                                                       edge-register))
+                           keys
+                           :canonical
+                           :node)
+                     identity)
+          (partial s/transform*
+                   :node
+                   (partial deep-merge
+                            (->> node-register
+                                 (s/transform s/MAP-KEYS (make-remap remapping))
+                                 (offset-paste :x x)
+                                 (offset-paste :y y)
+                                 augment)))
+          (make-delete-nodes true
+                             x
+                             (-> dimension
+                                 first
+                                 (+ x))
+                             y
+                             (-> dimension
+                                 last
+                                 (+ y))))))
+
+(def initial-dimension
+  [0 0])
 
 (def graph-action
   (->> (m/<> (frp/snapshot (->> (frp/snapshot normal typed)
@@ -474,6 +539,8 @@
                              (frp/stepper {} source-line-segment)))
              (frp/snapshot paste
                            ((aid/lift-a get-paste-action*)
+                             (frp/stepper initial-dimension
+                                          source-dimension-register)
                              (frp/stepper {} source-node-register)
                              (frp/stepper initial-edge source-edge-register)
                              cursor-x-behavior
@@ -599,8 +666,19 @@
                           s/NONE)
                 ((make-offset-register mode :x x0 x1))
                 ((make-offset-register mode :y y0 y1))))
-         (frp/snapshot delete
+         (frp/snapshot (m/<> delete yank)
                        canonical
+                       blockwise-visual-mode
+                       blockwise-visual-node
+                       cursor-x-behavior
+                       cursor-y-behavior)))
+
+(def sink-dimension-register
+  (m/<$> (fn [[_ mode a & b]]
+           (if mode
+             (map distance a b)
+             initial-dimension))
+         (frp/snapshot delete
                        blockwise-visual-mode
                        blockwise-visual-node
                        cursor-x-behavior
@@ -677,7 +755,7 @@
   [k0 k1 scroll bound]
   (s/transform (s/multi-path k0 k1) (partial + scroll) bound))
 
-(def valid-bounds
+(def valid-bound-event
   (->> (frp/snapshot bounds
                      (frp/stepper 0 source-scroll-x)
                      (frp/stepper 0 source-scroll-y))
@@ -694,10 +772,10 @@
                           keys
                           :canonical)
                     node-event))
-       (frp/accum {})
-       (m/<$> (aid/if-then-else empty?
-                                (constantly [])
-                                vals))))
+       (frp/accum {})))
+
+(def valid-bound-behavior
+  (frp/stepper {} valid-bound-event))
 
 (def make-directional
   #(comp (partial apply =)
@@ -794,19 +872,17 @@
                                                               (partial map m)))
                                              (constantly {})))
                       (apply merge {}))))
-    (->> valid-bounds
-         (m/<$> (aid/build zipmap
-                           (partial map :id)
-                           (partial map
-                                    (comp (partial s/transform*
-                                                   (s/multi-path :top
-                                                                 :bottom)
-                                                   (partial + marker-size))
-                                          (partial s/transform*
-                                                   (s/multi-path :bottom
-                                                                 :height)
-                                                   shrink)))))
-         (frp/stepper {}))
+    (m/<$> (partial s/transform*
+                    s/MAP-VALS
+                    (comp (partial s/transform*
+                                   (s/multi-path :top
+                                                 :bottom)
+                                   (partial + marker-size))
+                          (partial s/transform*
+                                   (s/multi-path :bottom
+                                                 :height)
+                                   shrink)))
+           valid-bound-behavior)
     (->> edge-event
          (m/<$> graph/edges)
          (frp/stepper []))))
@@ -945,27 +1021,26 @@
        (frp/stepper maximum-pixel)))
 
 (def editing-bound
-  (->> (frp/snapshot valid-bounds
+  (->> (frp/snapshot valid-bound-event
+                     id
                      cursor-x-behavior
                      cursor-y-behavior)
        (core/partition 2 1)
        (core/filter (comp (partial apply =)
-                          (partial map rest)))
+                          (partial map (partial drop 2))))
        (m/<$> last)
        (m/<> (m/<$> rest
                     (frp/snapshot insert-insert
-                                  (frp/stepper [] valid-bounds)
+                                  valid-bound-behavior
+                                  id
                                   cursor-x-behavior
                                   cursor-y-behavior)))
-       (m/<$> (fn [[m x y]]
-                (->> m
-                     (filter (comp (partial = x)
-                                   :x))
-                     (filter (comp (partial = y)
-                                   :y))
-                     (aid/if-then-else empty?
-                                       (constantly {})
-                                       first))))))
+       (m/<$> (fn [[m id & coordinate]]
+                (aid/if-then-else id
+                                  (comp m
+                                        id)
+                                  (constantly {})
+                                  coordinate)))))
 
 (def get-editing-bound
   #(m/<$> (comp (partial (aid/flip quot) cursor-size)
@@ -1054,29 +1129,26 @@
         (r/create-class
           {:component-did-mount
            (fn [_]
-             (->
-               @state
-               :editor
-               .textInput.getElement
-               (.addEventListener
-                 "keydown"
-                 #(editor-keydown [(get-status-text @state)
-                                   (.-key %)])))
              (-> @state
                  :editor
                  .textInput.getElement
-                 (.addEventListener
-                   "keyup"
-                   (fn [event*]
-                     (-> @state
-                         get-status-text
-                         editor-keyup)
-                     (swap! state
-                            (partial s/setval*
-                                     :backtick
-                                     (-> event*
-                                         .-key
-                                         (= "`"))))))))
+                 (.addEventListener "keydown"
+                                    #(editor-keydown [(get-status-text @state)
+                                                      (.-key %)])))
+             (-> @state
+                 :editor
+                 .textInput.getElement
+                 (.addEventListener "keyup"
+                                    (fn [event*]
+                                      (-> @state
+                                          get-status-text
+                                          editor-keyup)
+                                      (swap! state
+                                             (partial s/setval*
+                                                      :backtick
+                                                      (-> event*
+                                                          .-key
+                                                          (= "`"))))))))
            :component-did-update
            (fn [_]
              (if (-> @state
@@ -1276,8 +1348,8 @@
       [mode [x0 y0] x1 y1]
       [:rect (if mode
                {:fill   selection-color
-                :height (get-size y1 y0)
-                :width  (get-size x1 x0)
+                :height (get-size* y1 y0)
+                :width  (get-size* x1 x0)
                 :x      (get-x-cursor-pixel (min x0 x1))
                 :y      (* (min y0 y1) cursor-size)}
                {})])
@@ -1426,6 +1498,7 @@
 (loop-event {source-buffer                sink-buffer
              source-content               sink-content
              source-directory             sink-directory
+             source-dimension-register    sink-dimension-register
              source-edge-register         sink-edge-register
              source-in                    sink-in
              source-line-segment          sink-line-segment
@@ -1463,7 +1536,8 @@
    "p"      paste
    "space"  insert-normal
    "u"      undo
-   "x"      delete})
+   "x"      delete
+   "y"      yank})
 
 (bind-keymap keymap)
 
