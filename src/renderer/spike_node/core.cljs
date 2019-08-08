@@ -16,6 +16,7 @@
             [frp.core :as frp]
             katex
             [loom.graph :as graph]
+            [loom.derived :as derived]
             measure
             [oops.core :refer [oget+ oset!]]
             [reagent.core :as r]
@@ -460,6 +461,10 @@
   (partial deep-merge-with (comp last
                                  vector)))
 
+(defn make-remap
+  [m]
+  #(get m % %))
+
 (defn get-paste-action*
   [dimension node-register edge-register x y]
   (let [remapping (s/transform s/MAP-VALS
@@ -469,8 +474,9 @@
     (comp (aid/build (partial s/transform* :edge)
                      (comp (aid/flip (aid/curry 2 graph/add-edges*))
                            graph/edges
-                           (partial graph/subgraph edge-register)
-                           (partial map (set/map-invert remapping))
+                           (partial graph/subgraph
+                                    (derived/mapped-by (make-remap remapping)
+                                                       edge-register))
                            keys
                            :canonical
                            :node)
@@ -479,7 +485,7 @@
                    :node
                    (partial deep-merge
                             (->> node-register
-                                 (s/transform s/MAP-KEYS remapping)
+                                 (s/transform s/MAP-KEYS (make-remap remapping))
                                  (offset-paste :x x)
                                  (offset-paste :y y)
                                  augment)))
