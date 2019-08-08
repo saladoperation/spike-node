@@ -413,6 +413,12 @@
      s/NONE
      %))
 
+(defn get-minimum
+  [mode a0 a1]
+  (if mode
+    (min a0 a1)
+    a1))
+
 (defn get-delete-action*
   [mode [x0 y0] x1 y1 line-segment]
   (aid/if-then-else
@@ -425,9 +431,12 @@
         (aid/flip graph/remove-edges*)
         (->> line-segment
              (filter (comp (partial geom/intersect-line
-                                    (rect/rect (get-x-cursor-pixel (min x0
-                                                                        x1))
-                                               (* (min y0 y1) cursor-size)
+                                    (rect/rect (-> mode
+                                                   (get-minimum x0 x1)
+                                                   get-x-cursor-pixel)
+                                               (-> mode
+                                                   (get-minimum y0 y1)
+                                                   (* cursor-size))
                                                (get-size mode x0 x1)
                                                (get-size mode y0 y1)))
                            val))
