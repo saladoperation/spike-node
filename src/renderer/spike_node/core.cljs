@@ -391,14 +391,19 @@
 
 (defn make-delete-nodes
   [mode x0 x1 y0 y1]
-  #(s/setval (s/multi-path (get-id-path mode x0 x1 y0 y1)
-                           [:node
-                            :canonical
-                            (->> %
-                                 (select-ids mode x0 x1 y0 y1)
-                                 (apply s/multi-path))])
-             s/NONE
-             %))
+  #(s/setval
+     (s/multi-path (get-id-path mode x0 x1 y0 y1)
+                   [:node
+                    :canonical
+                    (->> %
+                         (select-ids mode x0 x1 y0 y1)
+                         (apply (comp (aid/if-then-else empty?
+                                                        (constantly s/NONE)
+                                                        (partial apply
+                                                                 s/multi-path))
+                                      vector)))])
+     s/NONE
+     %))
 
 (defn get-delete-action*
   [mode [x0 y0] x1 y1 line-segment]
