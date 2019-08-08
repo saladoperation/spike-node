@@ -227,9 +227,9 @@
   {})
 
 (def initial-node
-  ;TODO add :horizontal
+  ;TODO add :vertical
   {:canonical initial-canonical
-   :id        {}})
+   :id        (sorted-map)})
 
 (def initial-edge
   (graph/digraph))
@@ -1040,7 +1040,8 @@
                                   (comp m
                                         id)
                                   (constantly {})
-                                  coordinate)))))
+                                  ;TODO delete vec when sorted-map supports comparing a vector and IndexedSeq
+                                  (vec coordinate))))))
 
 (def get-editing-bound
   #(m/<$> (comp (partial (aid/flip quot) cursor-size)
