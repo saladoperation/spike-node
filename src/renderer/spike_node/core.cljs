@@ -385,10 +385,17 @@
   (comp Math/abs
         -))
 
-(def get-size
+(def get-size*
   (comp (partial * cursor-size)
         inc
         distance))
+
+(defn get-size
+  [mode a0 a1]
+  (get-size* (if mode
+               a0
+               a1)
+             a1))
 
 (defn make-delete-nodes
   [mode x0 x1 y0 y1]
@@ -421,8 +428,8 @@
                                     (rect/rect (get-x-cursor-pixel (min x0
                                                                         x1))
                                                (* (min y0 y1) cursor-size)
-                                               (get-size x0 x1)
-                                               (get-size y0 y1)))
+                                               (get-size mode x0 x1)
+                                               (get-size mode y0 y1)))
                            val))
              (map first))))
     (comp (make-delete-nodes mode x0 x1 y0 y1)
@@ -1331,8 +1338,8 @@
       [mode [x0 y0] x1 y1]
       [:rect (if mode
                {:fill   selection-color
-                :height (get-size y1 y0)
-                :width  (get-size x1 x0)
+                :height (get-size* y1 y0)
+                :width  (get-size* x1 x0)
                 :x      (get-x-cursor-pixel (min x0 x1))
                 :y      (* (min y0 y1) cursor-size)}
                {})])
