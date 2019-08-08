@@ -1524,8 +1524,8 @@
 
 (def keymap
   {":"      command
-   "^"      carrot
    "\\"     implication
+   "^"      carrot
    "ctrl+r" redo
    "ctrl+v" blockwise-visual-toggle
    "escape" escape
