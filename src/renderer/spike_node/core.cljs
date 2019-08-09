@@ -6,6 +6,7 @@
             ace-editor
             [aid.core :as aid]
             [cats.core :as m]
+            [clojure.data.avl :as avl]
             [clojure.math.combinatorics :as combo]
             [cljs-node-io.core :refer [slurp spit]]
             [cljs-node-io.fs :as fs]
@@ -230,7 +231,7 @@
 (def initial-node
   ;TODO add :vertical
   {:canonical initial-canonical
-   :id        (sorted-map)})
+   :id        (avl/sorted-map)})
 
 (def initial-edge
   (graph/digraph))
@@ -458,7 +459,7 @@
 
 (def get-coordinate-id
   (comp (partial apply
-                 sorted-map)
+                 avl/sorted-map)
         (partial mapcat (aid/build vector
                                    (comp (juxt :x :y)
                                          last)
