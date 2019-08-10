@@ -655,13 +655,13 @@
                 (avl/nearest coll test x))))
 
 (def sink-dollar-move
-  (m/<$> (fn [[_ x y id*]]
+  (m/<$> (fn [[_ y id*]]
            (aid/if-then-else (comp (partial = y)
                                    last)
                              first
                              (constantly 0)
-                             (first (nearest id* < [0 (inc y)] [x y]))))
-         (frp/snapshot dollar cursor-x-behavior cursor-y-behavior id)))
+                             (first (nearest id* < [0 (inc y)] [[0 y]]))))
+         (frp/snapshot dollar cursor-y-behavior id)))
 
 (defn make-offset-register
   [mode k a0 a1]
