@@ -261,7 +261,7 @@
 
 (def normal
   (->> (m/<> (aid/<$ [""] insert-normal)
-             (aid/<$ ["INSERT"] insert-insert)
+             (aid/<$ ["INSERT"] (m/<> insert-insert source-append-move))
              editor-keydown)
        (core/partition 2 1)
        (core/filter (aid/build and
@@ -952,7 +952,7 @@
 
 (def mode-event
   (m/<> (aid/<$ :normal normal)
-        (aid/<$ :insert (m/<> insert-normal insert-insert))
+        (aid/<$ :insert (m/<> insert-normal insert-insert source-append-move))
         (aid/<$ :command command)))
 
 (def mode-behavior
