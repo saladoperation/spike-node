@@ -41,6 +41,7 @@
           source-scroll-x
           source-scroll-y
           source-transform-edge-action
+          append
           blockwise-visual-toggle
           down
           up
@@ -646,23 +647,6 @@
 (def id
   (m/<$> :id node-behavior))
 
-(defn nearest
-  ([coll test x]
-   (avl/nearest coll test x))
-  ([coll test x default]
-   (aid/if-then nil?
-                (constantly default)
-                (avl/nearest coll test x))))
-
-(def sink-dollar-move
-  (m/<$> (fn [[_ y id*]]
-           (aid/if-then-else (comp (partial = y)
-                                   last)
-                             first
-                             (constantly 0)
-                             (first (nearest id* < [0 (inc y)] [[0 y]]))))
-         (frp/snapshot dollar cursor-y-behavior id)))
-
 (defn make-offset-register
   [mode k a0 a1]
   (aid/build (partial s/transform* [s/MAP-VALS k])
@@ -803,6 +787,44 @@
 
 (def valid-bound-behavior
   (frp/stepper {} valid-bound-event))
+
+(defn nearest
+  ([coll test x]
+   (avl/nearest coll test x))
+  ([coll test x default]
+   (aid/if-then nil?
+                (constantly default)
+                (avl/nearest coll test x))))
+
+(aid/defcurried get-end
+  [f y id*]
+  (aid/if-then-else (comp (partial = y)
+                          last)
+                    f
+                    (constantly 0)
+                    (first (nearest id* < [0 (inc y)] [[0 y]]))))
+
+(def sink-dollar-move
+  (m/<$> (comp (partial apply (get-end first))
+               rest)
+         (frp/snapshot dollar cursor-y-behavior id)))
+
+(def sink-append-move
+  (m/<$> (fn [[_ y node bound]]
+           (->> node
+                :id
+                (get-end (aid/build +
+                                    (comp inc
+                                          (partial (aid/flip quot) cursor-size)
+                                          :width
+                                          bound
+                                          (:id node))
+                                    first)
+                         y)))
+         (frp/snapshot append
+                       cursor-y-behavior
+                       node-behavior
+                       valid-bound-behavior)))
 
 (def make-directional
   #(comp (partial apply =)
@@ -1558,6 +1580,7 @@
    "ctrl+r" redo
    "ctrl+v" blockwise-visual-toggle
    "escape" escape
+   "A"      append
    "h"      left
    "i"      insert-insert
    "j"      down
