@@ -29,7 +29,8 @@
             [spike-node.parse.core :as parse])
   (:require-macros [spike-node.core :refer [defc]]))
 
-(frp/defe source-buffer
+(frp/defe source-append-move
+          source-buffer
           source-content
           source-dimension-register
           source-directory
@@ -213,7 +214,8 @@
        (m/<$> :x)
        (m/<> (aid/<$ initial-cursor carrot)
              (get-undo-redo-cursor :x)
-             source-dollar-move)
+             source-dollar-move
+             source-append-move)
        (get-cursor-event right left)))
 
 (def cursor-y-event
@@ -1545,7 +1547,8 @@
 (def loop-event
   (partial run! (partial apply frp/run)))
 
-(loop-event {source-buffer                sink-buffer
+(loop-event {source-append-move           sink-append-move
+             source-buffer                sink-buffer
              source-content               sink-content
              source-directory             sink-directory
              source-dimension-register    sink-dimension-register
