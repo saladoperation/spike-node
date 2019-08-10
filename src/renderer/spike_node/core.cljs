@@ -228,10 +228,16 @@
 (def initial-canonical
   {})
 
+(def reverse-sorted-map
+  (partial avl/sorted-map-by (comp (partial apply compare)
+                                   (partial map (comp vec
+                                                      reverse))
+                                   vector)))
+
 (def initial-node
   ;TODO add :vertical
   {:canonical initial-canonical
-   :id        (avl/sorted-map)})
+   :id        (reverse-sorted-map)})
 
 (def initial-edge
   (graph/digraph))
@@ -459,7 +465,7 @@
 
 (def get-coordinate-id
   (comp (partial apply
-                 avl/sorted-map)
+                 reverse-sorted-map)
         (partial mapcat (aid/build vector
                                    (comp (juxt :x :y)
                                          last)
