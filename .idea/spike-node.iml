@@ -97,6 +97,7 @@
     <orderEntry type="library" name="Leiningen: org.clojure/core.cache:0.6.5" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/core.memoize:0.5.9" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/core.specs.alpha:0.2.44" level="project" />
+    <orderEntry type="library" name="Leiningen: org.clojure/data.avl:0.1.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/data.json:0.2.6" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/data.priority-map:0.0.5" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/google-closure-library-third-party:0.0-20170809-b9c14c6b" level="project" />

@@ -6,6 +6,7 @@
             ace-editor
             [aid.core :as aid]
             [cats.core :as m]
+            [clojure.data.avl :as avl]
             [clojure.math.combinatorics :as combo]
             [cljs-node-io.core :refer [slurp spit]]
             [cljs-node-io.fs :as fs]
@@ -28,23 +29,27 @@
             [spike-node.parse.core :as parse])
   (:require-macros [spike-node.core :refer [defc]]))
 
-(frp/defe source-buffer
+(frp/defe source-append-move
+          source-buffer
           source-content
           source-dimension-register
           source-directory
           source-edge-register
           source-in
           source-line-segment
+          source-dollar-move
           source-node-register
           source-scroll-x
           source-scroll-y
           source-transform-edge-action
+          append
           blockwise-visual-toggle
           down
           up
           left
           right
           carrot
+          dollar
           delete
           ;TODO: when mousetrap starts to support all keys capture, replace "y" with all keys capture
           ;https://github.com/ccampbell/mousetrap/issues/134
@@ -208,7 +213,9 @@
   (->> source-buffer
        (m/<$> :x)
        (m/<> (aid/<$ initial-cursor carrot)
-             (get-undo-redo-cursor :x))
+             (get-undo-redo-cursor :x)
+             source-dollar-move
+             source-append-move)
        (get-cursor-event right left)))
 
 (def cursor-y-event
@@ -226,10 +233,16 @@
 (def initial-canonical
   {})
 
+(def reverse-sorted-map
+  (partial avl/sorted-map-by (comp (partial apply compare)
+                                   (partial map (comp vec
+                                                      reverse))
+                                   vector)))
+
 (def initial-node
-  ;TODO add :horizontal
+  ;TODO add :vertical
   {:canonical initial-canonical
-   :id        {}})
+   :id        (reverse-sorted-map)})
 
 (def initial-edge
   (graph/digraph))
@@ -248,7 +261,7 @@
 
 (def normal
   (->> (m/<> (aid/<$ [""] insert-normal)
-             (aid/<$ ["INSERT"] insert-insert)
+             (aid/<$ ["INSERT"] (m/<> insert-insert source-append-move))
              editor-keydown)
        (core/partition 2 1)
        (core/filter (aid/build and
@@ -457,7 +470,7 @@
 
 (def get-coordinate-id
   (comp (partial apply
-                 hash-map)
+                 reverse-sorted-map)
         (partial mapcat (aid/build vector
                                    (comp (juxt :x :y)
                                          last)
@@ -777,6 +790,44 @@
 (def valid-bound-behavior
   (frp/stepper {} valid-bound-event))
 
+(defn nearest
+  ([coll test x]
+   (avl/nearest coll test x))
+  ([coll test x default]
+   (aid/if-then nil?
+                (constantly default)
+                (avl/nearest coll test x))))
+
+(aid/defcurried get-end
+  [f y id*]
+  (aid/if-then-else (comp (partial = y)
+                          last)
+                    f
+                    (constantly 0)
+                    (first (nearest id* < [0 (inc y)] [[0 y]]))))
+
+(def sink-dollar-move
+  (m/<$> (comp (partial apply (get-end first))
+               rest)
+         (frp/snapshot dollar cursor-y-behavior id)))
+
+(def sink-append-move
+  (m/<$> (fn [[_ y node bound]]
+           (->> node
+                :id
+                (get-end (aid/build +
+                                    (comp js/Math.ceil
+                                          (partial (aid/flip /) cursor-size)
+                                          :width
+                                          bound
+                                          (:id node))
+                                    first)
+                         y)))
+         (frp/snapshot append
+                       cursor-y-behavior
+                       node-behavior
+                       valid-bound-behavior)))
+
 (def make-directional
   #(comp (partial apply =)
          (partial map %)))
@@ -901,7 +952,7 @@
 
 (def mode-event
   (m/<> (aid/<$ :normal normal)
-        (aid/<$ :insert (m/<> insert-normal insert-insert))
+        (aid/<$ :insert (m/<> insert-normal insert-insert source-append-move))
         (aid/<$ :command command)))
 
 (def mode-behavior
@@ -1040,7 +1091,8 @@
                                   (comp m
                                         id)
                                   (constantly {})
-                                  coordinate)))))
+                                  ;TODO delete vec when sorted-map supports comparing a vector and IndexedSeq
+                                  (vec coordinate))))))
 
 (def get-editing-bound
   #(m/<$> (comp (partial (aid/flip quot) cursor-size)
@@ -1495,13 +1547,15 @@
 (def loop-event
   (partial run! (partial apply frp/run)))
 
-(loop-event {source-buffer                sink-buffer
+(loop-event {source-append-move           sink-append-move
+             source-buffer                sink-buffer
              source-content               sink-content
              source-directory             sink-directory
              source-dimension-register    sink-dimension-register
              source-edge-register         sink-edge-register
              source-in                    sink-in
              source-line-segment          sink-line-segment
+             source-dollar-move           sink-dollar-move
              source-node-register         sink-node-register
              source-scroll-x              sink-scroll-x
              source-scroll-y              sink-scroll-y
@@ -1522,12 +1576,14 @@
   (partial run! (partial apply bind)))
 
 (def keymap
-  {":"      command
-   "^"      carrot
+  {"$"      dollar
+   ":"      command
    "\\"     implication
+   "^"      carrot
    "ctrl+r" redo
    "ctrl+v" blockwise-visual-toggle
    "escape" escape
+   "A"      append
    "h"      left
    "i"      insert-insert
    "j"      down
