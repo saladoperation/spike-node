@@ -36,6 +36,7 @@
           source-edge-register
           source-in
           source-line-segment
+          source-dollar-move
           source-node-register
           source-scroll-x
           source-scroll-y
@@ -210,7 +211,8 @@
   (->> source-buffer
        (m/<$> :x)
        (m/<> (aid/<$ initial-cursor carrot)
-             (get-undo-redo-cursor :x))
+             (get-undo-redo-cursor :x)
+             source-dollar-move)
        (get-cursor-event right left)))
 
 (def cursor-y-event
@@ -643,6 +645,23 @@
 
 (def id
   (m/<$> :id node-behavior))
+
+(defn nearest
+  ([coll test x]
+   (avl/nearest coll test x))
+  ([coll test x default]
+   (aid/if-then nil?
+                (constantly default)
+                (avl/nearest coll test x))))
+
+(def sink-dollar-move
+  (m/<$> (fn [[_ x y id*]]
+           (aid/if-then-else (comp (partial = y)
+                                   last)
+                             first
+                             (constantly x)
+                             (first (nearest id* < [0 (inc y)] [x y]))))
+         (frp/snapshot dollar cursor-x-behavior cursor-y-behavior id)))
 
 (defn make-offset-register
   [mode k a0 a1]
@@ -1511,6 +1530,7 @@
              source-edge-register         sink-edge-register
              source-in                    sink-in
              source-line-segment          sink-line-segment
+             source-dollar-move           sink-dollar-move
              source-node-register         sink-node-register
              source-scroll-x              sink-scroll-x
              source-scroll-y              sink-scroll-y
