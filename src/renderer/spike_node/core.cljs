@@ -816,8 +816,8 @@
            (->> node
                 :id
                 (get-end (aid/build +
-                                    (comp inc
-                                          (partial (aid/flip quot) cursor-size)
+                                    (comp js/Math.ceil
+                                          (partial (aid/flip /) cursor-size)
                                           :width
                                           bound
                                           (:id node))
