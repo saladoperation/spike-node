@@ -245,7 +245,7 @@
    :id        (reverse-sorted-map)})
 
 (def initial-edge
-  (graph/digraph))
+  (loom/digraph))
 
 (def exit?
   #{"Control" "Escape"})
@@ -699,8 +699,8 @@
 
 (def neighbors
   (aid/build set/union
-             graph/predecessors
-             graph/successors))
+             loom/predecessors
+             loom/successors))
 
 (def get-nodes
   (aid/build conj
