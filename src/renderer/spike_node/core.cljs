@@ -659,7 +659,7 @@
            (aid/if-then-else (comp (partial = y)
                                    last)
                              first
-                             (constantly x)
+                             (constantly 0)
                              (first (nearest id* < [0 (inc y)] [x y]))))
          (frp/snapshot dollar cursor-x-behavior cursor-y-behavior id)))
 
