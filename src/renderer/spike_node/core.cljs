@@ -147,15 +147,8 @@
                   reverse))
      core/dedupe))
 
-(def read-file
-  (partial
-    edn/read-string
-    {:readers
-     {'loom.graph.BasicEditableDigraph (comp loom/digraph
-                                             :adj)}}))
-
 (def edn?
-  #(try (do (read-file %)
+  #(try (do (edn/read-string %)
             true)
         ;TODO limit the error
         (catch js/Error _
@@ -1016,14 +1009,15 @@
                        s/LAST
                        (move* :content
                               :history
-                              (comp (partial s/transform* :node :canonical)
+                              (comp (partial s/transform* :edge graph/edges)
+                                    (partial s/transform* :node :canonical)
                                     ffirst))))
        (core/remove (fn [[path* m]]
                       (or (empty? path*)
                           (and (fs/fexists? path*)
                                (-> path*
                                    slurp
-                                   read-file
+                                   edn/read-string
                                    (= m))))))))
 
 (def initial-buffer
@@ -1041,10 +1035,14 @@
                 (aid/casep k
                   fs/fexists? (->> k
                                    slurp
-                                   read-file
+                                   edn/read-string
                                    (move* :history
                                           :content
                                           (comp get-history
+                                                (partial s/transform*
+                                                         :edge
+                                                         (partial apply
+                                                                  loom/digraph))
                                                 (partial s/transform*
                                                          :node
                                                          augment)))
